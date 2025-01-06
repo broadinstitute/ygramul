@@ -1,7 +1,9 @@
 use std::fmt::{Debug, Display, Formatter};
+use log::SetLoggerError;
 
 mod errors {
     pub(crate) const IO_ERROR: &str = "I/O error";
+    pub(crate) const SET_LOGGER_ERROR: &str = "Set logger error";
 }
 pub struct Error {
     message: String,
@@ -68,6 +70,12 @@ impl From<&str> for Error {
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         Error::new(errors::IO_ERROR.to_string(), Some(Box::new(error)))
+    }
+}
+
+impl From<SetLoggerError> for Error {
+    fn from(error: SetLoggerError) -> Self {
+        Error::new(errors::SET_LOGGER_ERROR.to_string(), Some(Box::new(error)))
     }
 }
 
