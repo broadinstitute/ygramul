@@ -22,6 +22,6 @@ fn main() {
 fn run() -> Result<(), Error> {
     let options = cli::get_cli_options()?;
     let config = load_config::load_config()?.build()?;
-    execute(&options, &config);
+    execute(&options, &config)?;
     Ok(())
 }

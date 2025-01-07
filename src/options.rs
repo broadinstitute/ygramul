@@ -1,7 +1,8 @@
 use crate::config::ConfigBuilder;
 
 pub enum Options {
-    Hello
+    Hello,
+    Survey,
 }
 
 impl Options {
