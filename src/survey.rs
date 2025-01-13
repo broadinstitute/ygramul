@@ -3,10 +3,7 @@ use std::{fmt, fs};
 use log::{info, warn};
 use crate::config::Config;
 use crate::error::Error;
-
-struct FileInfo {
-
-}
+use crate::file_info::FileInfo;
 
 struct FileInfos {
     n_files: usize
@@ -69,6 +66,8 @@ pub(crate) fn survey(config: &Config) -> Result<(), Error>{
     Ok(())
 }
 
+const FACTOR: &str = "Factor";
 fn classify_file(file: &std::path::Path) -> Option<FileInfo> {
     None
 }
+

@@ -7,6 +7,7 @@ pub mod error;
 pub mod config;
 mod survey;
 mod hello;
+mod file_info;
 
 pub fn execute(options: &Options, config: &Config) -> Result<(), Error> {
     match options {
