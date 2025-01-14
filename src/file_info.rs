@@ -4,7 +4,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 pub(crate) enum FileKind {
-    Gss, Gs
+    Gss, Gs, F
 }
 pub(crate) struct FileInfo {
     kind: FileKind,
@@ -45,6 +45,7 @@ impl FromStr for FileInfo {
         let kind = match circumfixes.as_slice() {
             ["gss", "phewas_all_large", "temp", "txt"] => Ok(FileKind::Gss),
             ["gs", "phewas_all_large", "temp", "txt"] => Ok(FileKind::Gs),
+            ["f", "phewas_all_large", "out"] => Ok(FileKind::F),
             _ => Err(unrecognized_path(&string)),
         }?;
         Ok(FileInfo { kind, factors })
