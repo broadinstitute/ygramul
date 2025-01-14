@@ -4,7 +4,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 pub(crate) enum FileKind {
-    Gss, Gs, F, Gsc
+    Gss, Gs, F, GscOut, GscList
 }
 pub(crate) struct FileInfo {
     kind: FileKind,
@@ -46,7 +46,8 @@ impl FromStr for FileInfo {
             ["gss", "phewas_all_large", "temp", "txt"] => Ok(FileKind::Gss),
             ["gs", "phewas_all_large", "temp", "txt"] => Ok(FileKind::Gs),
             ["f", "phewas_all_large", "out"] => Ok(FileKind::F),
-            ["gsc", "phewas_all_large", "out"] => Ok(FileKind::Gsc),
+            ["gsc", "phewas_all_large", "out"] => Ok(FileKind::GscOut),
+            ["gsc", "phewas_all_large", "list"] => Ok(FileKind::GscList),
             _ => Err(unrecognized_path(&string)),
         }?;
         Ok(FileInfo { kind, factors })
