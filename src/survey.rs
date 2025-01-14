@@ -47,13 +47,14 @@ pub(crate) fn survey(config: &Config) -> Result<(), Error>{
     for entry in entries {
         let entry =
             entry.map_err(|io_error| Error::wrap(data_dir.display().to_string(), io_error))?;
-        if entry.path().is_file() {
-            match classify_file(&entry.path()) {
-                None => {
-                    warn!("Unrecognized file '{}'.", entry.path().display());
+        let path = entry.path();
+        if path.is_file() {
+            match FileInfo::from_path(&path) {
+                Err(error) => {
+                    warn!("{}", error);
                     n_unrecognized += 1;
                 }
-                Some(file_info) => {
+                Ok(file_info) => {
                     file_infos.add(file_info);
                 }
             }
@@ -64,10 +65,5 @@ pub(crate) fn survey(config: &Config) -> Result<(), Error>{
     }
     info!("{}", file_infos.summary());
     Ok(())
-}
-
-const FACTOR: &str = "Factor";
-fn classify_file(file: &std::path::Path) -> Option<FileInfo> {
-    None
 }
 

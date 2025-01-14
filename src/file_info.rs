@@ -1,19 +1,46 @@
-use std::str::FromStr;
+use std::fmt::Display;
+use std::path::Path;
 use crate::error::Error;
+use std::str::FromStr;
 
 pub(crate) enum FileKind {
-    Gss
+    Gss,
 }
 pub(crate) struct FileInfo {
     kind: FileKind,
-    factors: Vec<u8>,
+    factors: Vec<String>,
+}
+
+impl FileInfo {
+    pub(crate) fn from_path(path: &Path) -> Result<Self, Error> {
+        match path.to_str() {
+            Some(string) => string.parse(),
+            None => Err(unrecognized_path(&path.display())),
+        }
+    }
+}
+
+fn unrecognized_path<P: Display>(path: &P) -> Error {
+    Error::from(format!("Unrecognized file: '{}'.", path))
 }
 
 impl FromStr for FileInfo {
     type Err = Error;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = string.split(',').collect();
-        todo!()
+        let mut circumfixes: Vec<&str> = Vec::new();
+        let mut factors: Vec<String> = Vec::new();
+        for part in string.split(',') {
+            if let Some(factor) = part.strip_prefix("Factor") {
+                factors.push(factor.to_string());
+            } else {
+                circumfixes.push(part);
+            }
+        }
+        let kind = match circumfixes.as_slice() {
+            ["gss", "phewas_all_large", "temp", "txt"] => Ok(FileKind::Gss),
+            _ => Err(unrecognized_path(&string)),
+        }?;
+        Ok(FileInfo { kind, factors })
     }
 }
