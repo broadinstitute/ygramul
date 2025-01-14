@@ -35,7 +35,7 @@ impl FromStr for FileInfo {
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         let mut circumfixes: Vec<&str> = Vec::new();
         let mut factors: Vec<String> = Vec::new();
-        for part in string.split(',') {
+        for part in string.split('.') {
             if let Some(factor) = part.strip_prefix("Factor") {
                 factors.push(factor.to_string());
             } else {
