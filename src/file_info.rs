@@ -1,6 +1,6 @@
+use crate::error::Error;
 use std::fmt::Display;
 use std::path::Path;
-use crate::error::Error;
 use std::str::FromStr;
 
 pub(crate) enum FileKind {
@@ -13,9 +13,14 @@ pub(crate) struct FileInfo {
 
 impl FileInfo {
     pub(crate) fn from_path(path: &Path) -> Result<Self, Error> {
-        match path.to_str() {
-            Some(string) => string.parse(),
+        match path.file_name() {
             None => Err(unrecognized_path(&path.display())),
+            Some(file_name) => {
+                match file_name.to_str() {
+                    None => Err(unrecognized_path(&path.display())),
+                    Some(string) => string.parse(),
+                }
+            }
         }
     }
 }
