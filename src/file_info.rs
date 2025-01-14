@@ -44,7 +44,10 @@ impl FromStr for FileInfo {
         }
         let kind = match circumfixes.as_slice() {
             ["gss", "phewas_all_large", "temp", "txt"] => Ok(FileKind::Gss),
-            _ => Err(unrecognized_path(&string)),
+            _ => {
+                println!("{}", circumfixes.join(","));
+                Err(unrecognized_path(&string))
+            },
         }?;
         Ok(FileInfo { kind, factors })
     }
