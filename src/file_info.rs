@@ -3,11 +3,12 @@ use std::fmt::Display;
 use std::path::Path;
 use std::str::FromStr;
 
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub(crate) enum FileKind {
     Gss, Gs, F, GscOut, GscList, Gc, Pc, Pc1, Pc2, Pc3, PcList
 }
 pub(crate) struct FileInfo {
-    kind: FileKind,
+    pub(crate) kind: FileKind,
     factors: Vec<String>,
 }
 

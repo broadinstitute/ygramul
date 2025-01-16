@@ -1,12 +1,25 @@
 use std::fmt::Display;
 use std::{fmt, fs};
+use std::collections::{BTreeMap, BTreeSet};
 use log::{info, warn};
 use crate::config::Config;
 use crate::error::Error;
-use crate::file_info::FileInfo;
+use crate::file_info::{FileInfo, FileKind};
 
 struct FileInfos {
+    groups: BTreeMap<Vec<String>, FileGroup>,
     n_files: usize
+}
+
+struct FileGroup {
+    kinds: BTreeSet<FileKind>
+}
+
+impl FileGroup {
+    fn new() -> FileGroup { FileGroup { kinds: BTreeSet::new(), } }
+    fn add(&mut self, file_info: &FileInfo) {
+        self.kinds.insert(file_info.kind);
+    }
 }
 
 struct FilesSummary {
@@ -15,7 +28,7 @@ struct FilesSummary {
 
 impl FileInfos {
     fn new() -> FileInfos {
-        FileInfos { n_files: 0 }
+        FileInfos { groups: BTreeMap::new(), n_files: 0 }
     }
     fn add(&mut self, file_info: FileInfo) {
         self.n_files += 1;
