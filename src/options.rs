@@ -3,6 +3,7 @@ use crate::config::ConfigBuilder;
 pub enum Options {
     Hello,
     Survey,
+    Ping
 }
 
 impl Options {
