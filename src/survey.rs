@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use std::{fmt, fs};
 use std::collections::{BTreeMap, BTreeSet};
 use log::{info, warn};
@@ -17,13 +17,7 @@ struct FileGroup {
 
 impl FileGroup {
     fn new() -> FileGroup { FileGroup { kinds: BTreeSet::new(), } }
-    fn add(&mut self, file_info: &FileInfo) {
-        self.kinds.insert(file_info.kind);
-    }
-}
-
-struct FilesSummary {
-    n_files: usize
+    fn add(&mut self, kind: FileKind) { self.kinds.insert(kind); }
 }
 
 impl FileInfos {
@@ -31,16 +25,36 @@ impl FileInfos {
         FileInfos { groups: BTreeMap::new(), n_files: 0 }
     }
     fn add(&mut self, file_info: FileInfo) {
+        let FileInfo { kind, factors } = file_info;
+        self.groups.entry(factors).or_default().add(kind);
         self.n_files += 1;
-    }
-    fn summary(&self) -> FilesSummary {
-        FilesSummary { n_files: self.n_files }
     }
 }
 
-impl Display for FilesSummary {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Identified {} data files", self.n_files)
+impl Default for FileGroup {
+    fn default() -> Self { FileGroup::new() }
+}
+
+impl Display for FileGroup {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut kinds = self.kinds.iter();
+        if let Some(kind) = kinds.next() {
+            write!(f, "{}", kind)?;
+            for kind in kinds {
+                write!(f, ", {}", kind)?;
+            }
+        }
+        write!(f, " ({} files)", self.kinds.len())?;
+        Ok(())
+    }
+}
+
+impl Display for FileInfos {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for (factors, group) in &self.groups {
+            writeln!(f, "{}: {}", factors.join("/"), group)?;
+        }
+        write!(f, "Identified {} data files in {} groups.", self.n_files, self.groups.len())
     }
 }
 
@@ -76,7 +90,7 @@ pub(crate) fn survey(config: &Config) -> Result<(), Error>{
     if n_unrecognized > 0 {
         warn!("{} files were not recognized and will be ignored.", n_unrecognized);
     }
-    info!("{}", file_infos.summary());
+    info!("{}", file_infos);
     Ok(())
 }
 

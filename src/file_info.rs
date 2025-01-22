@@ -1,5 +1,5 @@
 use crate::error::Error;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::str::FromStr;
 
@@ -9,7 +9,7 @@ pub(crate) enum FileKind {
 }
 pub(crate) struct FileInfo {
     pub(crate) kind: FileKind,
-    factors: Vec<String>,
+    pub(crate) factors: Vec<String>,
 }
 
 impl FileInfo {
@@ -58,5 +58,23 @@ impl FromStr for FileInfo {
             _ => Err(unrecognized_path(&string)),
         }?;
         Ok(FileInfo { kind, factors })
+    }
+}
+
+impl Display for FileKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FileKind::Gss => write!(f, "GSS"),
+            FileKind::Gs => write!(f, "GS"),
+            FileKind::F => write!(f, "F"),
+            FileKind::GscOut => write!(f, "GSC out"),
+            FileKind::GscList => write!(f, "GSC list"),
+            FileKind::Gc => write!(f, "GC"),
+            FileKind::Pc => write!(f, "PC"),
+            FileKind::Pc1 => write!(f, "PC1"),
+            FileKind::Pc2 => write!(f, "PC2"),
+            FileKind::Pc3 => write!(f, "PC3"),
+            FileKind::PcList => write!(f, "PC list"),
+        }
     }
 }
