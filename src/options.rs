@@ -1,9 +1,9 @@
-use crate::config::ConfigBuilder;
+use crate::config::{ConfigBuilder, CredsBuilder};
 
 pub enum Options {
     Hello,
     Survey,
-    Ping
+    Ping(CredsBuilder)
 }
 
 impl Options {

@@ -9,6 +9,7 @@ mod survey;
 mod hello;
 mod file_info;
 mod ping;
+mod neo;
 
 pub fn execute(options: &Options, config: &Config) -> Result<(), Error> {
     match options {
