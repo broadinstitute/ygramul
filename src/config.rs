@@ -21,6 +21,7 @@ pub struct CredsBuilder {
     pub password: Option<String>
 }
 
+#[derive(Deserialize)]
 pub struct Neo4jConfigBuilder {
     uri: Option<String>,
     creds: CredsBuilder,
@@ -71,6 +72,12 @@ impl ConfigBuilder {
             .ok_or(Error::from("No data directory specified."))?;
         let neo4j = self.neo4j.build()?;
         Ok(Config { data_dir, neo4j })
+    }
+}
+
+impl Default for CredsBuilder {
+    fn default() -> Self {
+        CredsBuilder::new()
     }
 }
 

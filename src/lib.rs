@@ -15,7 +15,7 @@ pub fn execute(options: &Options, config: &Config) -> Result<(), Error> {
     match options {
         Options::Hello => hello::hello(config),
         Options::Survey => survey::survey(config)?,
-        Options::Ping => ping::ping_neo4j(config),
+        Options::Ping => ping::ping_neo4j(config)?,
     }
     Ok(())
 }
