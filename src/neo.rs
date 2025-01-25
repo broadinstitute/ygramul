@@ -15,6 +15,6 @@ impl Neo {
         Ok(Neo { runtime, graph })
     }
     pub(crate) fn for_config(config: &Neo4jConfig) -> Result<Neo, Error> {
-        Neo::new(&config.uri, &config.creds.user, &config.creds.password)
+        Neo::new(&config.uri, &config.user, &config.password)
     }
 }
