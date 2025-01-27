@@ -60,10 +60,25 @@ impl ConfigBuilder {
         let neo4j = Some(Neo4jConfigBuilder::new());
         ConfigBuilder { action, data_dir, neo4j }
     }
+    pub fn neo4j_mut(&mut self) -> &mut Neo4jConfigBuilder {
+        self.neo4j.get_or_insert_with(Neo4jConfigBuilder::new)
+    }
     pub fn with_cli_options(self, cli_options: CliOptions) -> ConfigBuilder {
         let mut builder = self;
         if let Some(action) = cli_options.action {
             builder.action = Some(action);
+        }
+        if let Some(data_dir) = cli_options.args.data_dir {
+            builder.data_dir = Some(data_dir);
+        }
+        if let Some(uri) = cli_options.args.uri {
+            builder.neo4j_mut().uri = Some(uri);
+        }
+        if let Some(user) = cli_options.args.user {
+            builder.neo4j_mut().user = Some(user);
+        }
+        if let Some(password) = cli_options.args.password {
+            builder.neo4j_mut().password = Some(password);
         }
         builder
     }
