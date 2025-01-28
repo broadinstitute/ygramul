@@ -8,7 +8,8 @@ use crate::cli::CliOptions;
 pub enum Action {
     Hello,
     Survey,
-    Ping
+    Ping,
+    Upload
 }
 
 pub struct Neo4jConfig {
