@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
-use clap::{command, Arg, ArgMatches, Command};
 use crate::config::Action;
 use crate::error::Error;
+use clap::{command, Arg, ArgMatches, Command};
+use std::path::PathBuf;
 
 pub struct Args {
     pub(crate) data_dir: Option<PathBuf>,

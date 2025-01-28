@@ -5,6 +5,7 @@ mod errors {
     pub(crate) const IO_ERROR: &str = "I/O error";
     pub(crate) const SET_LOGGER_ERROR: &str = "Set logger error";
     pub(crate) const NEO4RS_ERROR: &str = "Neo4rs error";
+    pub(crate) const NEO4RS_DE_ERROR: &str = "Neo4rs deserialization error";
 }
 pub struct Error {
     message: String,
@@ -83,6 +84,12 @@ impl From<SetLoggerError> for Error {
 impl From<neo4rs::Error> for Error {
     fn from(error: neo4rs::Error) -> Self {
         Error::new(errors::NEO4RS_ERROR.to_string(), Some(Box::new(error)))
+    }
+}
+
+impl From<neo4rs::DeError> for Error {
+    fn from(error: neo4rs::DeError) -> Self {
+        Error::new(errors::NEO4RS_DE_ERROR.to_string(), Some(Box::new(error)))
     }
 }
 
