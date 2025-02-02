@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::{fmt, fs};
 use std::collections::{BTreeMap, BTreeSet};
 use log::{info, warn};
-use crate::config::Config;
+use crate::config::LocalConfig;
 use crate::error::Error;
 use crate::file_info::{FileInfo, FileKind};
 
@@ -58,7 +58,7 @@ impl Display for FileInfos {
     }
 }
 
-pub(crate) fn survey(config: &Config) -> Result<(), Error>{
+pub(crate) fn survey(config: &LocalConfig) -> Result<(), Error>{
     let data_dir = &config.data_dir;
     if !data_dir.exists() {
         Err(Error::from(

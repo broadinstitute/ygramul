@@ -1,4 +1,4 @@
-use crate::config::{Action, Config};
+use crate::config::ActionConfig;
 use crate::error::Error;
 
 pub mod error;
@@ -11,12 +11,12 @@ mod neo;
 pub mod cli;
 mod upload;
 
-pub fn execute(config: &Config) -> Result<(), Error> {
-    match config.action {
-        Action::Hello => hello::hello(config),
-        Action::Survey => survey::survey(config)?,
-        Action::Ping => ping::ping_neo4j(config)?,
-        Action::Upload => upload::upload_data(config)?,
+pub fn execute(config: &ActionConfig) -> Result<(), Error> {
+    match config {
+        ActionConfig::Hello(config) => hello::hello(config),
+        ActionConfig::Survey(config) => survey::survey(config)?,
+        ActionConfig::Ping(config) => ping::ping_neo4j(config)?,
+        ActionConfig::Upload(config) => upload::upload_data(config)?,
     }
     Ok(())
 }

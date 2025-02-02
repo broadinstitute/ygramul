@@ -17,8 +17,17 @@ pub struct Neo4jConfig {
     pub(crate) user: String,
     pub(crate) password: String
 }
-pub struct Config {
-    pub(crate) action: Action,
+pub enum ActionConfig {
+    Hello(LocalConfig),
+    Survey(LocalConfig),
+    Ping(ClientConfig),
+    Upload(ClientConfig),
+}
+pub struct LocalConfig {
+    pub(crate) data_dir: PathBuf,
+}
+
+pub struct ClientConfig {
     pub(crate) data_dir: PathBuf,
     pub(crate) neo4j: Neo4jConfig,
 }
@@ -46,9 +55,10 @@ impl Neo4jConfigBuilder {
         }
     }
     pub fn build(self) -> Result<Neo4jConfig, Error> {
-        let uri = self.uri.ok_or(Error::from("No URI specified."))?;
-        let user = self.user.ok_or(Error::from("No user specified."))?;
-        let password = self.password.ok_or(Error::from("No password specified."))?;
+        let uri = self.uri.ok_or(Error::from("No URI (neo4j/uri) )specified."))?;
+        let user = self.user.ok_or(Error::from("No user (neo4j/user) specified."))?;
+        let password =
+            self.password.ok_or(Error::from("No password (neo4j/password) specified."))?;
         Ok(Neo4jConfig {
             uri, user, password
         })
@@ -83,14 +93,33 @@ impl ConfigBuilder {
         }
         builder
     }
-    pub fn build(self) -> Result<Config, Error> {
+    pub fn build(self) -> Result<ActionConfig, Error> {
         let action = self.action.ok_or(Error::from("No action specified."))?;
         let data_dir =
             self.data_dir
-            .ok_or(Error::from("No data directory specified."))?;
-        let neo4j =
-            self.neo4j.ok_or(Error::from("No Neo4j configuration specified."))?.build()?;
-        Ok(Config { action, data_dir, neo4j })
+            .ok_or(Error::from("No data directory (data_dir) specified."))?;
+        match action {
+            Action::Hello => {
+                Ok(ActionConfig::Hello(LocalConfig { data_dir }))
+            }
+            Action::Survey => {
+                Ok(ActionConfig::Survey(LocalConfig { data_dir }))
+            }
+            Action::Ping => {
+                let neo4j =
+                    self.neo4j
+                        .ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?
+                        .build()?;
+                Ok(ActionConfig::Ping(ClientConfig { data_dir, neo4j }))
+            }
+            Action::Upload => {
+                let neo4j =
+                    self.neo4j
+                        .ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?
+                        .build()?;
+                Ok(ActionConfig::Upload(ClientConfig { data_dir, neo4j }))
+            }
+        }
     }
 }
 

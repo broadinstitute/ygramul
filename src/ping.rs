@@ -1,7 +1,7 @@
 use std::time::{Duration, UNIX_EPOCH};
 use humantime::format_rfc3339_millis;
 use log::info;
-use crate::config::Config;
+use crate::config::ClientConfig;
 use crate::error::Error;
 use crate::neo::RowEater;
 use neo4rs::{Query, Row};
@@ -30,7 +30,7 @@ impl RowEater for PingRowEater {
     }
 }
 
-pub(crate) fn ping_neo4j(config: &Config) -> Result<(), Error> {
+pub(crate) fn ping_neo4j(config: &ClientConfig) -> Result<(), Error> {
     let neo = crate::neo::Neo::for_config(&config.neo4j)?;
     let query = Query::new(PING_QUERY.to_string());
     let mut row_eater = PingRowEater::new();
