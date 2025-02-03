@@ -1,11 +1,23 @@
 use crate::error::Error;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::str::FromStr;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub(crate) enum FileKind {
-    Gss, Gs, F, GscOut, GscList, Gc, Pc, Pc1, Pc2, Pc3, PcList
+    Gss,
+    Gs,
+    F,
+    GscOut,
+    GscList,
+    Gc,
+    Pc,
+    Pc1,
+    Pc2,
+    Pc3,
+    PcList,
 }
 pub(crate) struct FileInfo {
     pub(crate) kind: FileKind,
@@ -16,12 +28,10 @@ impl FileInfo {
     pub(crate) fn from_path(path: &Path) -> Result<Self, Error> {
         match path.file_name() {
             None => Err(unrecognized_path(&path.display())),
-            Some(file_name) => {
-                match file_name.to_str() {
-                    None => Err(unrecognized_path(&path.display())),
-                    Some(string) => string.parse(),
-                }
-            }
+            Some(file_name) => match file_name.to_str() {
+                None => Err(unrecognized_path(&path.display())),
+                Some(string) => string.parse(),
+            },
         }
     }
 }
@@ -61,8 +71,39 @@ impl FromStr for FileInfo {
     }
 }
 
+impl FileKind {
+    pub(crate) fn create_name(&self, factors: &[String]) -> String {
+        let mut name = String::new();
+        match self {
+            FileKind::Gss => name.push_str("gss"),
+            FileKind::Gs => name.push_str("gs"),
+            FileKind::F => name.push('f'),
+            FileKind::GscOut | FileKind::GscList => name.push_str("gsc"),
+            FileKind::Gc => name.push_str("gc"),
+            FileKind::Pc | FileKind::Pc1 | FileKind::Pc2 | FileKind::Pc3 | FileKind::PcList =>
+                name.push_str("pc"),
+        }
+        name.push_str(".phewas_all_large.");
+        for factor in factors {
+            name.push_str("Factor");
+            name.push_str(factor);
+            name.push('.');
+        }
+        match self {
+            FileKind::Gss | FileKind::Gs => name.push_str("temp.txt"),
+            FileKind::F | FileKind::GscOut | FileKind::Gc | FileKind::Pc =>
+                name.push_str("out"),
+            FileKind::GscList | FileKind::PcList => name.push_str("list"),
+            FileKind::Pc1 => name.push_str("1.out"),
+            FileKind::Pc2 => name.push_str("2.out"),
+            FileKind::Pc3 => name.push_str("3.out"),
+        }
+        name
+    }
+}
+
 impl Display for FileKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             FileKind::Gss => write!(f, "GSS"),
             FileKind::Gs => write!(f, "GS"),
@@ -76,5 +117,73 @@ impl Display for FileKind {
             FileKind::Pc3 => write!(f, "PC3"),
             FileKind::PcList => write!(f, "PC list"),
         }
+    }
+}
+
+pub(crate) struct FileInfos {
+    pub(crate) groups: BTreeMap<Vec<String>, FileGroup>,
+    n_files: usize,
+}
+
+pub(crate) struct FileGroup {
+    pub(crate) kinds: BTreeSet<FileKind>,
+}
+
+impl FileGroup {
+    fn new() -> FileGroup {
+        FileGroup {
+            kinds: BTreeSet::new(),
+        }
+    }
+    fn add(&mut self, kind: FileKind) {
+        self.kinds.insert(kind);
+    }
+}
+
+impl FileInfos {
+    pub(crate) fn new() -> FileInfos {
+        FileInfos {
+            groups: BTreeMap::new(),
+            n_files: 0,
+        }
+    }
+    pub(crate) fn add(&mut self, file_info: FileInfo) {
+        let FileInfo { kind, factors } = file_info;
+        self.groups.entry(factors).or_default().add(kind);
+        self.n_files += 1;
+    }
+}
+
+impl Default for FileGroup {
+    fn default() -> Self {
+        FileGroup::new()
+    }
+}
+
+impl Display for FileGroup {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut kinds = self.kinds.iter();
+        if let Some(kind) = kinds.next() {
+            write!(f, "{}", kind)?;
+            for kind in kinds {
+                write!(f, ", {}", kind)?;
+            }
+        }
+        write!(f, " ({} files)", self.kinds.len())?;
+        Ok(())
+    }
+}
+
+impl Display for FileInfos {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for (factors, group) in &self.groups {
+            writeln!(f, "{}: {}", factors.join("/"), group)?;
+        }
+        write!(
+            f,
+            "Identified {} data files in {} groups.",
+            self.n_files,
+            self.groups.len()
+        )
     }
 }

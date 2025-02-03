@@ -28,7 +28,7 @@ pub struct LocalConfig {
 }
 
 pub struct ClientConfig {
-    pub(crate) data_dir: PathBuf,
+    pub(crate) local_config: LocalConfig,
     pub(crate) neo4j: Neo4jConfig,
 }
 
@@ -106,18 +106,20 @@ impl ConfigBuilder {
                 Ok(ActionConfig::Survey(LocalConfig { data_dir }))
             }
             Action::Ping => {
+                let local_config = LocalConfig { data_dir };
                 let neo4j =
                     self.neo4j
                         .ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?
                         .build()?;
-                Ok(ActionConfig::Ping(ClientConfig { data_dir, neo4j }))
+                Ok(ActionConfig::Ping(ClientConfig { local_config, neo4j }))
             }
             Action::Upload => {
+                let local_config = LocalConfig { data_dir };
                 let neo4j =
                     self.neo4j
                         .ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?
                         .build()?;
-                Ok(ActionConfig::Upload(ClientConfig { data_dir, neo4j }))
+                Ok(ActionConfig::Upload(ClientConfig { local_config, neo4j }))
             }
         }
     }

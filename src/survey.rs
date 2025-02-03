@@ -1,64 +1,11 @@
-use std::fmt::{Display, Formatter};
-use std::{fmt, fs};
-use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
 use log::{info, warn};
 use crate::config::LocalConfig;
 use crate::error::Error;
-use crate::file_info::{FileInfo, FileKind};
+use crate::file_info::{FileInfo, FileInfos};
 
-struct FileInfos {
-    groups: BTreeMap<Vec<String>, FileGroup>,
-    n_files: usize
-}
 
-struct FileGroup {
-    kinds: BTreeSet<FileKind>
-}
-
-impl FileGroup {
-    fn new() -> FileGroup { FileGroup { kinds: BTreeSet::new(), } }
-    fn add(&mut self, kind: FileKind) { self.kinds.insert(kind); }
-}
-
-impl FileInfos {
-    fn new() -> FileInfos {
-        FileInfos { groups: BTreeMap::new(), n_files: 0 }
-    }
-    fn add(&mut self, file_info: FileInfo) {
-        let FileInfo { kind, factors } = file_info;
-        self.groups.entry(factors).or_default().add(kind);
-        self.n_files += 1;
-    }
-}
-
-impl Default for FileGroup {
-    fn default() -> Self { FileGroup::new() }
-}
-
-impl Display for FileGroup {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut kinds = self.kinds.iter();
-        if let Some(kind) = kinds.next() {
-            write!(f, "{}", kind)?;
-            for kind in kinds {
-                write!(f, ", {}", kind)?;
-            }
-        }
-        write!(f, " ({} files)", self.kinds.len())?;
-        Ok(())
-    }
-}
-
-impl Display for FileInfos {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for (factors, group) in &self.groups {
-            writeln!(f, "{}: {}", factors.join("/"), group)?;
-        }
-        write!(f, "Identified {} data files in {} groups.", self.n_files, self.groups.len())
-    }
-}
-
-pub(crate) fn survey(config: &LocalConfig) -> Result<(), Error>{
+pub(crate) fn survey(config: &LocalConfig) -> Result<FileInfos, Error>{
     let data_dir = &config.data_dir;
     if !data_dir.exists() {
         Err(Error::from(
@@ -91,6 +38,6 @@ pub(crate) fn survey(config: &LocalConfig) -> Result<(), Error>{
         warn!("{} files were not recognized and will be ignored.", n_unrecognized);
     }
     info!("{}", file_infos);
-    Ok(())
+    Ok(file_infos)
 }
 
