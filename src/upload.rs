@@ -6,6 +6,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use crate::neo::{Neo, RowEater};
+use crate::upload::cypher::CreateEdgeQueryBuilder;
 use crate::upload::gss::upload_gss;
 
 mod gss;
@@ -57,8 +58,9 @@ fn upload_kind(key: &[String], kind: FileKind, config: &ClientConfig, neo: &Neo,
         Error::wrap(path.display().to_string(), io_error)
     )?;
     let reader = BufReader::new(file);
+    let query_builder = CreateEdgeQueryBuilder::new();
     match kind {
-        FileKind::Gss => { upload_gss(reader, neo, row_eater)? }
+        FileKind::Gss => { upload_gss(reader, neo, row_eater, &query_builder)? }
         FileKind::Gs => { kind_not_implemented(&path)? }
         FileKind::F => { kind_not_implemented(&path)? }
         FileKind::GscOut => { kind_not_implemented(&path)? }

@@ -1,6 +1,4 @@
-use neo4rs::Query;
-use std::collections::BTreeMap;
-use log::info;
+use neo4rs::{query, Query};
 
 pub(crate) struct Node {
     pub(crate) label: String,
@@ -9,46 +7,49 @@ pub(crate) struct Node {
 
 pub(crate) struct Edge {
     pub(crate) label: String,
-    pub(crate) props: BTreeMap<String, f64>,
+    pub(crate) key1: String,
+    pub(crate) value1: f64,
+    pub(crate) key2: String,
+    pub(crate) value2: f64,
 }
 
 impl Node {
     pub(crate) fn new(label: String, id: String) -> Node {
         Node { label, id }
     }
-    pub(crate) fn cypher(&self) -> String {
-        format!("(n:{} {{id: '{}'}})", encode(&self.label), encode(&self.id))
-    }
 }
 
 impl Edge {
-    pub(crate) fn new(label: String, props: BTreeMap<String, f64>) -> Edge {
-        Edge { label: label.to_string(), props }
-    }
-    pub(crate) fn cypher(&self) -> String {
-        let props =
-            self.props.iter()
-                .map(|(key, value)| format!("{}: {}", encode(key), value))
-                .collect::<Vec<String>>().join(", ");
-        format!("[:{} {{{}}}]", encode(&self.label), props)
+    pub(crate) fn new(label: String, key1: String, value1: f64, key2: String, value2: f64)
+        -> Edge {
+        Edge { label, key1, value1, key2, value2 }
     }
 }
 
-pub(crate) fn create_node(node: &Node) -> Query {
-    let cypher= format!("CREATE {}", node.cypher());
-    info!("{}", cypher);
-    Query::new(cypher)
+const CREATE_EDGE: &str = "\
+MERGE (n1:$label1 {id: $id1})\n\
+MERGE (n2:$label2 {id: $id2})\n\
+MERGE (n1)-[e:$label_edge]->(n2)\n\
+SET e += { $key1: $value1, $key2: $value2 }";
+
+pub(crate) struct CreateEdgeQueryBuilder {
+    query: Query
 }
 
-pub(crate) fn create_edge(node1: &Node, edge: &Edge, node2: &Node) -> Query {
-    let cypher =
-        format!("MATCH (node1:{} {{ id: '{}' }}), (node2:{} {{ id: '{}' }}) \n\
-        CREATE (node1)-{}->(node2)", encode(&node1.label), encode(&node1.id), encode(&node2.label),
-                encode(&node2.id), encode(&edge.cypher()));
-    info!("{}", cypher);
-    Query::new(cypher)
-}
-
-fn encode(string: &str) -> String {
-    string.replace("'", "\\'")
+impl CreateEdgeQueryBuilder {
+    pub(crate) fn new() -> Self {
+        CreateEdgeQueryBuilder { query: query(CREATE_EDGE) }
+    }
+    pub(crate) fn create_query(&self, node1: &Node, edge: &Edge, node2: &Node) -> Query {
+        self.query.clone()
+            .param("label1", &*node1.label)
+            .param("id1", &*node1.id)
+            .param("label2", &*node2.label)
+            .param("id2", &*node2.id)
+            .param("label_edge", &*edge.label)
+            .param("key1", &*edge.key1)
+            .param("value1", edge.value1)
+            .param("key2", &*edge.key2)
+            .param("value2", edge.value2)
+    }
 }

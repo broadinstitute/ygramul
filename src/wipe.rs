@@ -40,6 +40,9 @@ pub(crate) fn wipe(config: &ClientConfig) -> Result<(), Error> {
                 info!("Wiped {} nodes", n_nodes);
                 n_retries = 0;
                 n_nodes += 1 + n_nodes / 10;
+                if n_nodes > i64::MAX / 10 {
+                    break;
+                }
             }
             Err(_) => {
                 error!("Failed to wipe {} nodes", n_nodes);
