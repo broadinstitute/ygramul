@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
+use std::num::ParseFloatError;
 use log::SetLoggerError;
 
 mod errors {
@@ -93,3 +94,8 @@ impl From<neo4rs::DeError> for Error {
     }
 }
 
+impl From<ParseFloatError> for Error {
+    fn from(error: ParseFloatError) -> Self {
+        Error::new(error.to_string(), Some(Box::new(error)))
+    }
+}

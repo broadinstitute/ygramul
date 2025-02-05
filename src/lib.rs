@@ -10,6 +10,8 @@ mod neo;
 mod ping;
 mod survey;
 mod upload;
+mod tsv;
+mod wipe;
 
 pub fn execute(config: &ActionConfig) -> Result<(), Error> {
     match config {
@@ -19,6 +21,7 @@ pub fn execute(config: &ActionConfig) -> Result<(), Error> {
         }
         ActionConfig::Ping(config) => ping::ping_neo4j(config)?,
         ActionConfig::Upload(config) => upload::upload_data(config)?,
+        ActionConfig::Wipe(config) => wipe::wipe(config)?,
     }
     Ok(())
 }

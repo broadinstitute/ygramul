@@ -18,7 +18,8 @@ mod cmds {
     pub(crate) const SURVEY: &str = "survey";
     pub(crate) const PING: &str = "ping";
     pub(crate) const UPLOAD: &str = "upload";
-    pub(crate) const ALL: [&str; 4] = [HELLO, SURVEY, PING, UPLOAD];
+    pub(crate) const WIPE: &str = "wipe";
+    pub(crate) const ALL: [&str; 5] = [HELLO, SURVEY, PING, UPLOAD, WIPE];
 }
 
 mod about {
@@ -26,6 +27,7 @@ mod about {
     pub(crate) const SURVEY: &str = "Surveys the data.";
     pub(crate) const PING: &str = "Pings the Neo4j server.";
     pub(crate) const UPLOAD: &str = "Uploads data to the Neo4j server.";
+    pub(crate) const WIPE: &str = "Deletes all data on the Neo4j server.";
 }
 
 mod args {
@@ -56,6 +58,7 @@ pub fn get_cli_options() -> Result<CliOptions, Error> {
         .subcommand(new_command(cmds::SURVEY, about::SURVEY))
             .subcommand(new_command(cmds::PING, about::PING))
             .subcommand(new_command(cmds::UPLOAD, about::UPLOAD))
+            .subcommand(new_command(cmds::WIPE, about::WIPE))
         .get_matches();
     match matches.subcommand() {
         Some((cmds::HELLO, sub_matches)) =>
@@ -66,6 +69,8 @@ pub fn get_cli_options() -> Result<CliOptions, Error> {
             Ok(new_options(Some(Action::Ping), sub_matches)),
         Some((cmds::UPLOAD, sub_matches)) =>
             Ok(new_options(Some(Action::Upload), sub_matches)),
+        Some((cmds::WIPE, sub_matches)) =>
+            Ok(new_options(Some(Action::Wipe), sub_matches)),
         Some((command, _)) =>
             Err(Error::from(
                 format!("Unknown command: {}. {}", command, known_subcommands())

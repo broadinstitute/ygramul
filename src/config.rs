@@ -9,7 +9,8 @@ pub enum Action {
     Hello,
     Survey,
     Ping,
-    Upload
+    Upload,
+    Wipe
 }
 
 pub struct Neo4jConfig {
@@ -22,6 +23,7 @@ pub enum ActionConfig {
     Survey(LocalConfig),
     Ping(ClientConfig),
     Upload(ClientConfig),
+    Wipe(ClientConfig),
 }
 pub struct LocalConfig {
     pub(crate) data_dir: PathBuf,
@@ -107,19 +109,18 @@ impl ConfigBuilder {
             }
             Action::Ping => {
                 let local_config = LocalConfig { data_dir };
-                let neo4j =
-                    self.neo4j
-                        .ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?
-                        .build()?;
+                let neo4j = neo4j_config(self.neo4j)?;
                 Ok(ActionConfig::Ping(ClientConfig { local_config, neo4j }))
             }
             Action::Upload => {
                 let local_config = LocalConfig { data_dir };
-                let neo4j =
-                    self.neo4j
-                        .ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?
-                        .build()?;
+                let neo4j = neo4j_config(self.neo4j)?;
                 Ok(ActionConfig::Upload(ClientConfig { local_config, neo4j }))
+            }
+            Action::Wipe => {
+                let local_config = LocalConfig { data_dir };
+                let neo4j = neo4j_config(self.neo4j)?;
+                Ok(ActionConfig::Wipe(ClientConfig { local_config, neo4j }))
             }
         }
     }
@@ -145,6 +146,8 @@ impl TryFrom<&str> for Action {
             "hello" => Ok(Action::Hello),
             "survey" => Ok(Action::Survey),
             "ping" => Ok(Action::Ping),
+            "upload" => Ok(Action::Upload),
+            "wipe" => Ok(Action::Wipe),
             _ => Err(Error::from(format!("Unknown action: {}", value))),
         }
     }
@@ -161,4 +164,8 @@ impl TryFrom<&str> for ConfigBuilder {
             )),
         }
     }
+}
+
+fn neo4j_config(builder: Option<Neo4jConfigBuilder>) -> Result<Neo4jConfig, Error> {
+    builder.ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?.build()
 }
