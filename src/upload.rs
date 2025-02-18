@@ -7,10 +7,16 @@ use std::io::BufReader;
 use std::path::Path;
 use crate::neo::{Neo, RowEater};
 use crate::upload::cypher::CreateEdgeQueryBuilder;
+use crate::upload::f::upload_f;
+use crate::upload::gc::upload_gc;
 use crate::upload::gss::upload_gss;
+use crate::upload::pc::upload_pc;
 
 mod gss;
 mod cypher;
+mod pc;
+mod gc;
+mod f;
 
 pub(crate) struct UploadRowEater {
 
@@ -60,23 +66,21 @@ fn upload_kind(key: &[String], kind: FileKind, config: &ClientConfig, neo: &Neo,
     let reader = BufReader::new(file);
     let query_builder = CreateEdgeQueryBuilder::new();
     match kind {
-        FileKind::Gss => { upload_gss(reader, neo, row_eater, &query_builder)? }
-        FileKind::Gs => { kind_not_implemented(&path)? }
-        FileKind::F => { kind_not_implemented(&path)? }
-        FileKind::GscOut => { kind_not_implemented(&path)? }
-        FileKind::GscList => { kind_not_implemented(&path)? }
-        FileKind::Gc => { kind_not_implemented(&path)? }
-        FileKind::Pc => { kind_not_implemented(&path)? }
-        FileKind::Pc1 => { kind_not_implemented(&path)? }
-        FileKind::Pc2 => { kind_not_implemented(&path)? }
-        FileKind::Pc3 => { kind_not_implemented(&path)? }
-        FileKind::PcList => { kind_not_implemented(&path)? }
+        FileKind::Gss => { ignore_file(&path) }
+        FileKind::Gs => { ignore_file(&path) }
+        FileKind::F => { upload_f(reader, neo, row_eater, &query_builder)? }
+        FileKind::GscOut => { ignore_file(&path) }
+        FileKind::GscList => { ignore_file(&path) }
+        FileKind::Gc => { upload_gc(reader, neo, row_eater, &query_builder)? }
+        FileKind::Pc => { upload_pc(reader, neo, row_eater, &query_builder)? }
+        FileKind::Pc1 => { ignore_file(&path) }
+        FileKind::Pc2 => { ignore_file(&path) }
+        FileKind::Pc3 => { ignore_file(&path) }
+        FileKind::PcList => { ignore_file(&path) }
     }
     Ok(())
 }
 
-fn kind_not_implemented(path: &Path) -> Result<(), Error> {
-    Err(Error::from(
-        format!("Reading this file is not implemented: '{}'.", path.display())
-    ))
+fn ignore_file(path: &Path) {
+    log::info!("Ignoring file '{}'.", path.display());
 }
