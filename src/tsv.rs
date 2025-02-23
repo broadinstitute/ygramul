@@ -117,7 +117,7 @@ fn get_col_map(header: &str, cols: &[Column]) -> Result<Vec<Option<usize>>, Erro
             col_map.push(None);
         }
     }
-    cols_found.iter().enumerate().find(|(_, &found)| !found)
+    cols_found.iter().enumerate().find(|&(_, found)| !found)
         .map(|(j, _)|
             Err(Error::from(format!("Missing column: '{}'", cols[j].key)))
         )
