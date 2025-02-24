@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::neo::Neo;
-use crate::tsv::{Column, TsvReader, Type};
-use crate::upload::cypher::{CreateEdgeQueryBuilder, Edge, Node};
+use crate::tsv_old::{Column, TsvReader, Type};
+use crate::upload::cypher::{CreateEdgeQueryBuilder2, Edge2, Node};
 use crate::upload::UploadRowEater;
 use std::io::{BufReader, Read};
 
@@ -10,7 +10,7 @@ const GENE_SET: &str = "Gene_Set";
 const BETA: &str = "beta";
 const BETA_UNCORRECTED: &str = "beta_uncorrected";
 pub(crate) fn upload_gss<R: Read>(reader: BufReader<R>, neo: &Neo, row_eater: &mut UploadRowEater,
-                                  query_builder: &CreateEdgeQueryBuilder)
+                                  query_builder: &CreateEdgeQueryBuilder2)
     -> Result<(), Error> {
     let cols = vec![
         Column::new(TRAIT, Type::String),
@@ -30,14 +30,14 @@ pub(crate) fn upload_gss<R: Read>(reader: BufReader<R>, neo: &Neo, row_eater: &m
     Ok(())
 }
 
-fn create_items(neo: &Neo, row_eater: &mut UploadRowEater, query_builder: &CreateEdgeQueryBuilder,
+fn create_items(neo: &Neo, row_eater: &mut UploadRowEater, query_builder: &CreateEdgeQueryBuilder2,
                 the_trait: String, gene_set: String, beta: f64, beta_uncorrected: f64)
-    -> Result<(), Error> {
+                -> Result<(), Error> {
     let trait_node = Node::new("Trait".to_string(), the_trait);
     let gene_set_node = Node::new("GeneSet".to_string(), gene_set);
     let edge =
-        Edge::new("MANIFESTS".to_string(), "beta".to_string(), beta,
-                  "beta_uncorrected".to_string(), beta_uncorrected);
+        Edge2::new("MANIFESTS".to_string(), "beta".to_string(), beta,
+                   "beta_uncorrected".to_string(), beta_uncorrected);
     let query = query_builder.create_query(&gene_set_node, &edge, &trait_node);
     neo.cypher(query, row_eater)?;
     Ok(())

@@ -10,8 +10,9 @@ mod neo;
 mod ping;
 mod survey;
 mod upload;
-mod tsv;
+mod tsv_old;
 mod wipe;
+mod tsv;
 
 pub fn execute(config: &ActionConfig) -> Result<(), Error> {
     match config {
