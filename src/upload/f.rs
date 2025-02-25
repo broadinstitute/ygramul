@@ -4,6 +4,7 @@ use crate::tsv::{TsvEater, TsvEaterMaker};
 use crate::upload::cypher::CreateFactorNodeQueryBuilder;
 use crate::upload::UploadRowEater;
 use std::io::{BufReader, Read};
+use crate::upload::factor::factor_id;
 
 const FACTOR: &str = "Factor";
 const LABEL: &str = "label";
@@ -58,9 +59,9 @@ pub(crate) fn upload_f<R: Read>(key: &[String], reader: BufReader<R>, neo: &Neo,
 fn upload_row(key: &[String], neo: &Neo, query_builder: &CreateFactorNodeQueryBuilder,
               row_eater: &mut UploadRowEater, row: Row)
               -> Result<(), Error> {
-    let node_id = format!("{}_{}", key.join("_"), row.subkey);
+    let node_id = factor_id(key, &row.subkey);
     let query = query_builder.create_query(&node_id, &row.label);
-    println!("f, label: {}", row.label);
+    println!("{}, {}", &node_id, &row.label);
     neo.cypher(query, row_eater)?;
     Ok(())
 }

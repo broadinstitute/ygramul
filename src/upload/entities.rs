@@ -4,7 +4,7 @@ use crate::tsv::{TsvEater, TsvEaterMaker, TsvReader};
 use crate::upload::cypher::CreateEntityEdgeQueryBuilder;
 use crate::upload::UploadRowEater;
 use std::io::{BufReader, Read};
-
+use crate::upload::factor::factor_id;
 
 pub struct EntityUploadEaterMaker {
     entity_class: String,
@@ -18,7 +18,6 @@ pub(crate) struct EntityUploadEater {
 }
 
 pub(crate) struct EntityRow {
-    entity_class: String,
     entity: String,
     subkeys: Vec<String>,
     weights: Vec<f64>,
@@ -64,7 +63,6 @@ impl TsvEater for EntityUploadEater {
         let entity =
             pheno.ok_or_else(|| Error::from(format!("Missing {}", entity_class)))?;
         Ok(EntityRow {
-            entity_class,
             entity,
             subkeys,
             weights,
@@ -94,11 +92,10 @@ fn upload_row<B: CreateEntityEdgeQueryBuilder>(
     row_eater: &mut UploadRowEater,
     row: EntityRow,
 ) -> Result<(), Error> {
-    let key_prefix = key.join("_");
     for (subkey, &weight) in row.subkeys.iter().zip(row.weights.iter()) {
-        let factor_id = format!("{}_{}", key_prefix, subkey);
+        let factor_id = factor_id(key, subkey);
+        println!("{}, {}, {}", &row.entity, &factor_id, weight);
         let query = query_builder.create_query(&row.entity, &factor_id, weight);
-        println!("{}", row.entity_class);
         neo.cypher(query, row_eater)?;
     }
     Ok(())
