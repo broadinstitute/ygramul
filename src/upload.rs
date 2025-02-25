@@ -6,16 +6,15 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use crate::neo::{Neo, RowEater};
-use crate::upload::cypher::CreateEdgeQueryBuilder2;
 use crate::upload::f::upload_f;
 use crate::upload::gc::upload_gc;
 use crate::upload::pc::upload_pc;
 
-mod gss;
 mod cypher;
 mod pc;
 mod gc;
 mod f;
+mod entities;
 
 pub(crate) struct UploadRowEater {
 
@@ -63,15 +62,14 @@ fn upload_kind(key: &[String], kind: FileKind, config: &ClientConfig, neo: &Neo,
         Error::wrap(path.display().to_string(), io_error)
     )?;
     let reader = BufReader::new(file);
-    let query_builder = CreateEdgeQueryBuilder2::new();
     match kind {
         FileKind::Gss => { ignore_file(&path) }
         FileKind::Gs => { ignore_file(&path) }
-        FileKind::F => { upload_f(reader, neo, row_eater, &query_builder)? }
+        FileKind::F => { upload_f(key, reader, neo, row_eater)? }
         FileKind::GscOut => { ignore_file(&path) }
         FileKind::GscList => { ignore_file(&path) }
-        FileKind::Gc => { upload_gc(reader, neo, row_eater, &query_builder)? }
-        FileKind::Pc => { upload_pc(reader, neo, row_eater)? }
+        FileKind::Gc => { upload_gc(key, reader, neo, row_eater)? }
+        FileKind::Pc => { upload_pc(key, reader, neo, row_eater)? }
         FileKind::Pc1 => { ignore_file(&path) }
         FileKind::Pc2 => { ignore_file(&path) }
         FileKind::Pc3 => { ignore_file(&path) }

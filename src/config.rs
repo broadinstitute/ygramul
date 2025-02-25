@@ -13,6 +13,14 @@ pub enum Action {
     Wipe
 }
 
+mod action {
+    pub(crate) const HELLO: &str = "hello";
+    pub(crate) const SURVEY: &str = "survey";
+    pub(crate) const PING: &str = "ping";
+    pub(crate) const UPLOAD: &str = "upload";
+    pub(crate) const WIPE: &str = "wipe";
+    pub(crate) const ALL: [&str; 5] = [HELLO, SURVEY, PING, UPLOAD, WIPE];
+}
 pub struct Neo4jConfig {
     pub(crate) uri: String,
     pub(crate) user: String,
@@ -96,7 +104,11 @@ impl ConfigBuilder {
         builder
     }
     pub fn build(self) -> Result<ActionConfig, Error> {
-        let action = self.action.ok_or(Error::from("No action specified."))?;
+        let action =
+            self.action.ok_or(Error::from(
+                format!("No action specified. Possible actions are {}.",
+                        action::ALL.join(", "))
+            ))?;
         let data_dir =
             self.data_dir
             .ok_or(Error::from("No data directory (data_dir) specified."))?;
@@ -143,11 +155,11 @@ impl TryFrom<&str> for Action {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
-            "hello" => Ok(Action::Hello),
-            "survey" => Ok(Action::Survey),
-            "ping" => Ok(Action::Ping),
-            "upload" => Ok(Action::Upload),
-            "wipe" => Ok(Action::Wipe),
+            action::HELLO => Ok(Action::Hello),
+            action::SURVEY => Ok(Action::Survey),
+            action::PING => Ok(Action::Ping),
+            action::UPLOAD => Ok(Action::Upload),
+            action::WIPE => Ok(Action::Wipe),
             _ => Err(Error::from(format!("Unknown action: {}", value))),
         }
     }

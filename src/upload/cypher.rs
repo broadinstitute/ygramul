@@ -1,88 +1,70 @@
-use neo4rs::{query, Query};
+use neo4rs::{Query, query};
 
-pub(crate) struct Node {
-    pub(crate) label: String,
-    pub(crate) id: String,
-}
+const CREATE_FACTOR_NODE: &str = "\
+MERGE (n:Factor { id: $id })\n\
+SET n += { name: $name }";
 
-pub(crate) struct Edge1 {
-    pub(crate) label: String,
-    pub(crate) key: String,
-    pub(crate) value: f64,
-}
-pub(crate) struct Edge2 {
-    pub(crate) label: String,
-    pub(crate) key1: String,
-    pub(crate) value1: f64,
-    pub(crate) key2: String,
-    pub(crate) value2: f64,
-}
+const CREATE_GENE_EDGE: &str = "\
+MERGE (n1:Gene { id: $gene_id })\n\
+MERGE (n2:Factor { id: $factor_id })\n\
+MERGE (n1)-[e:IMPACTS]->(n2)\n\
+SET e += { weight: $weight }";
+const CREATE_PHENO_EDGE: &str = "\
+MERGE (n1:Pheno { id: $pheno_id })\n\
+MERGE (n2:Factor { id: $factor_id })\n\
+MERGE (n1)-[e:CONTROLS]->(n2)\n\
+SET e += { weight: $weight }";
 
-impl Node {
-    pub(crate) fn new(label: String, id: String) -> Node {
-        Node { label, id }
-    }
+pub(crate) struct CreateFactorNodeQueryBuilder {
+    query: Query,
 }
 
-impl Edge1 {
-    pub(crate) fn new(label: String, key: String, value: f64) -> Edge1 {
-        Edge1 { label, key, value }
-    }
+pub(crate) trait CreateEntityEdgeQueryBuilder {
+    fn new() -> Self;
+    fn create_query(&self, entity_id: &str, factor_id: &str, weight: f64) -> Query;
 }
-impl Edge2 {
-    pub(crate) fn new(label: String, key1: String, value1: f64, key2: String, value2: f64)
-        -> Edge2 {
-        Edge2 { label, key1, value1, key2, value2 }
-    }
+pub(crate) struct CreateGeneEdgeQueryBuilder {
+    query: Query,
 }
-
-const CREATE_EDGE1: &str = "\
-MERGE (n1:$label1 {id: $id1})\n\
-MERGE (n2:$label2 {id: $id2})\n\
-MERGE (n1)-[e:$label_edge]->(n2)\n\
-SET e += { $key: $value }";
-const CREATE_EDGE2: &str = "\
-MERGE (n1:$label1 {id: $id1})\n\
-MERGE (n2:$label2 {id: $id2})\n\
-MERGE (n1)-[e:$label_edge]->(n2)\n\
-SET e += { $key1: $value1, $key2: $value2 }";
-
-pub(crate) struct CreateEdgeQueryBuilder1 {
-    query: Query
+pub(crate) struct CreatePhenoEdgeQueryBuilder {
+    query: Query,
 }
-pub(crate) struct CreateEdgeQueryBuilder2 {
-    query: Query
-}
-
-impl CreateEdgeQueryBuilder1 {
+impl CreateFactorNodeQueryBuilder {
     pub(crate) fn new() -> Self {
-        CreateEdgeQueryBuilder1 { query: query(CREATE_EDGE1) }
+        CreateFactorNodeQueryBuilder {
+            query: query(CREATE_FACTOR_NODE),
+        }
     }
-    pub(crate) fn create_query(&self, node1: &Node, edge: &Edge1, node2: &Node) -> Query {
-        self.query.clone()
-            .param("label1", &*node1.label)
-            .param("id1", &*node1.id)
-            .param("label2", &*node2.label)
-            .param("id2", &*node2.id)
-            .param("label_edge", &*edge.label)
-            .param("key", &*edge.key)
-            .param("value", edge.value)
+    pub(crate) fn create_query(&self, id: &str, name: &str) -> Query {
+        self.query.clone().param("id", id).param("name", name)
     }
 }
-impl CreateEdgeQueryBuilder2 {
-    pub(crate) fn new() -> Self {
-        CreateEdgeQueryBuilder2 { query: query(CREATE_EDGE2) }
+
+impl CreateEntityEdgeQueryBuilder for CreateGeneEdgeQueryBuilder {
+    fn new() -> Self {
+        CreateGeneEdgeQueryBuilder {
+            query: query(CREATE_GENE_EDGE),
+        }
     }
-    pub(crate) fn create_query(&self, node1: &Node, edge: &Edge2, node2: &Node) -> Query {
-        self.query.clone()
-            .param("label1", &*node1.label)
-            .param("id1", &*node1.id)
-            .param("label2", &*node2.label)
-            .param("id2", &*node2.id)
-            .param("label_edge", &*edge.label)
-            .param("key1", &*edge.key1)
-            .param("value1", edge.value1)
-            .param("key2", &*edge.key2)
-            .param("value2", edge.value2)
+    fn create_query(&self, entity_id: &str, factor_id: &str, weight: f64) -> Query {
+        self.query
+            .clone()
+            .param("gene_id", entity_id)
+            .param("factor_id", factor_id)
+            .param("weight", weight)
+    }
+}
+impl CreateEntityEdgeQueryBuilder for CreatePhenoEdgeQueryBuilder {
+    fn new() -> Self {
+        CreatePhenoEdgeQueryBuilder {
+            query: query(CREATE_PHENO_EDGE),
+        }
+    }
+    fn create_query(&self, entity_id: &str, factor_id: &str, weight: f64) -> Query {
+        self.query
+            .clone()
+            .param("pheno_id", entity_id)
+            .param("factor_id", factor_id)
+            .param("weight", weight)
     }
 }

@@ -10,7 +10,6 @@ mod neo;
 mod ping;
 mod survey;
 mod upload;
-mod tsv_old;
 mod wipe;
 mod tsv;
 
