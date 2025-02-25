@@ -30,7 +30,8 @@ impl TsvEater for FUploadEater {
     type Row = Row;
     fn field(&mut self, name: &str, value: &str) -> Result<(), Error> {
         match name {
-            FACTOR => self.subkey = Some(value.to_string()),
+            FACTOR =>
+                self.subkey = value.strip_prefix("Factor").map(|s| s.to_string()),
             LABEL => self.label = Some(value.to_string()),
             _ => {}
         }
