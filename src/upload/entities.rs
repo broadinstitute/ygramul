@@ -21,6 +21,7 @@ pub(crate) struct EntityRow {
     entity: String,
     subkeys: Vec<String>,
     weights: Vec<f64>,
+    weight_max: f64
 }
 
 impl EntityUploadEaterMaker {
@@ -62,10 +63,12 @@ impl TsvEater for EntityUploadEater {
         } = self;
         let entity =
             pheno.ok_or_else(|| Error::from(format!("Missing {}", entity_class)))?;
+        let weight_max = weights.iter().cloned().fold(0.0, f64::max);
         Ok(EntityRow {
             entity,
             subkeys,
             weights,
+            weight_max,
         })
     }
 }
@@ -77,10 +80,11 @@ pub fn upload_rows<R: Read, B: CreateEntityEdgeQueryBuilder>(
     query_builder: &B,
     row_eater: &mut UploadRowEater,
     eater_maker: EntityUploadEaterMaker,
+    threshold: f64
 ) -> Result<(), Error> {
     let tsv_reader: TsvReader<_, EntityUploadEaterMaker> = TsvReader::new(reader, eater_maker)?;
     for row in tsv_reader {
-        upload_row(key, neo, query_builder, row_eater, row?)?;
+        upload_row(key, neo, query_builder, row_eater, row?, threshold)?;
     }
     Ok(())
 }
@@ -91,12 +95,15 @@ fn upload_row<B: CreateEntityEdgeQueryBuilder>(
     query_builder: &B,
     row_eater: &mut UploadRowEater,
     row: EntityRow,
+    threshold: f64
 ) -> Result<(), Error> {
     for (subkey, &weight) in row.subkeys.iter().zip(row.weights.iter()) {
-        let factor_id = factor_id(key, subkey);
-        println!("{}, {}, {}", &row.entity, &factor_id, weight);
-        let query = query_builder.create_query(&row.entity, &factor_id, weight);
-        neo.cypher(query, row_eater)?;
+        if weight > row.weight_max * threshold {
+            let factor_id = factor_id(key, subkey);
+            println!("{}, {}, {}", &row.entity, &factor_id, weight);
+            let query = query_builder.create_query(&row.entity, &factor_id, weight);
+            neo.cypher(query, row_eater)?;
+        }
     }
     Ok(())
 }

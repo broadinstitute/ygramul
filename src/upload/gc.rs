@@ -8,11 +8,13 @@ use crate::upload::cypher::{CreateEntityEdgeQueryBuilder, CreateGeneEdgeQueryBui
 mod fields {
     pub const GENE: &str = "Gene";
 }
+
+const THRESHOLD: f64 = 0.01;
 pub(crate) fn upload_gc<R: Read>(key: &[String], reader: BufReader<R>, neo: &Neo,
                                  row_eater: &mut UploadRowEater) -> Result<(), Error> {
     let query_builder = CreateGeneEdgeQueryBuilder::new();
     let eater_maker = EntityUploadEaterMaker::new(fields::GENE.to_string());
-    entities::upload_rows(key, reader, neo, &query_builder, row_eater, eater_maker)?;
+    entities::upload_rows(key, reader, neo, &query_builder, row_eater, eater_maker, THRESHOLD)?;
     Ok(())
 }
 
