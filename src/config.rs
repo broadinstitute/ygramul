@@ -10,16 +10,18 @@ pub enum Action {
     Survey,
     Ping,
     Upload,
-    Wipe
+    Wipe,
+    Cat
 }
 
-mod action {
+pub(crate) mod action {
     pub(crate) const HELLO: &str = "hello";
     pub(crate) const SURVEY: &str = "survey";
     pub(crate) const PING: &str = "ping";
     pub(crate) const UPLOAD: &str = "upload";
     pub(crate) const WIPE: &str = "wipe";
-    pub(crate) const ALL: [&str; 5] = [HELLO, SURVEY, PING, UPLOAD, WIPE];
+    pub(crate) const CAT: &str = "cat";
+    pub(crate) const ALL: [&str; 5] = [HELLO, SURVEY, PING, UPLOAD, CAT];
 }
 pub struct Neo4jConfig {
     pub(crate) uri: String,
@@ -32,6 +34,7 @@ pub enum ActionConfig {
     Ping(ClientConfig),
     Upload(ClientConfig),
     Wipe(ClientConfig),
+    Cat(InputConfig),
 }
 pub struct LocalConfig {
     pub(crate) data_dir: PathBuf,
@@ -42,6 +45,10 @@ pub struct ClientConfig {
     pub(crate) neo4j: Neo4jConfig,
 }
 
+pub struct InputConfig {
+    pub(crate) file: String
+}
+
 #[derive(Deserialize)]
 pub struct Neo4jConfigBuilder {
     uri: Option<String>,
@@ -49,12 +56,27 @@ pub struct Neo4jConfigBuilder {
     password: Option<String>,
 }
 #[derive(Deserialize)]
+pub struct InputConfigBuilder {
+    file: Option<String>,
+}
+#[derive(Deserialize)]
 pub struct ConfigBuilder {
     action: Option<Action>,
     data_dir: Option<PathBuf>,
     neo4j: Option<Neo4jConfigBuilder>,
+    input: Option<InputConfigBuilder>,
 }
 
+impl InputConfigBuilder {
+    pub fn new() -> InputConfigBuilder {
+        let file: Option<String> = None;
+        InputConfigBuilder { file }
+    }
+    pub fn build(self) -> Result<InputConfig, Error> {
+        let file = self.file.ok_or(Error::from("No input file specified."))?;
+        Ok(InputConfig { file })
+    }
+}
 impl Neo4jConfigBuilder {
     pub fn new() -> Neo4jConfigBuilder {
         let uri: Option<String> = None;
@@ -79,7 +101,8 @@ impl ConfigBuilder {
         let action: Option<Action> = None;
         let data_dir: Option<PathBuf> = None;
         let neo4j = Some(Neo4jConfigBuilder::new());
-        ConfigBuilder { action, data_dir, neo4j }
+        let input = Some(InputConfigBuilder::new());
+        ConfigBuilder { action, data_dir, neo4j, input }
     }
     pub fn neo4j_mut(&mut self) -> &mut Neo4jConfigBuilder {
         self.neo4j.get_or_insert_with(Neo4jConfigBuilder::new)
@@ -103,36 +126,52 @@ impl ConfigBuilder {
         }
         builder
     }
+    fn get_action(&self) -> Result<Action, Error> {
+        self.action.ok_or(Error::from(
+            format!("No action specified. Possible actions are {}.",
+                    action::ALL.join(", "))
+        ))
+    }
+    fn get_data_dir(&self) -> Result<PathBuf, Error> {
+        self.data_dir.clone().ok_or(Error::from(
+            "No data directory (data_dir) specified."
+        ))
+    }
+    pub fn get_input(self) -> Result<InputConfig, Error> {
+        self.input.ok_or(Error::from("No input configuration specified."))?.build()
+    }
     pub fn build(self) -> Result<ActionConfig, Error> {
-        let action =
-            self.action.ok_or(Error::from(
-                format!("No action specified. Possible actions are {}.",
-                        action::ALL.join(", "))
-            ))?;
-        let data_dir =
-            self.data_dir
-            .ok_or(Error::from("No data directory (data_dir) specified."))?;
+        let action = self.get_action()?;
         match action {
             Action::Hello => {
+                let data_dir = self.get_data_dir()?;
                 Ok(ActionConfig::Hello(LocalConfig { data_dir }))
             }
             Action::Survey => {
+                let data_dir = self.get_data_dir()?;
                 Ok(ActionConfig::Survey(LocalConfig { data_dir }))
             }
             Action::Ping => {
+                let data_dir = self.get_data_dir()?;
                 let local_config = LocalConfig { data_dir };
                 let neo4j = neo4j_config(self.neo4j)?;
                 Ok(ActionConfig::Ping(ClientConfig { local_config, neo4j }))
             }
             Action::Upload => {
+                let data_dir = self.get_data_dir()?;
                 let local_config = LocalConfig { data_dir };
                 let neo4j = neo4j_config(self.neo4j)?;
                 Ok(ActionConfig::Upload(ClientConfig { local_config, neo4j }))
             }
             Action::Wipe => {
+                let data_dir = self.get_data_dir()?;
                 let local_config = LocalConfig { data_dir };
                 let neo4j = neo4j_config(self.neo4j)?;
                 Ok(ActionConfig::Wipe(ClientConfig { local_config, neo4j }))
+            }
+            Action::Cat => {
+                let input_config = self.get_input()?;
+                Ok(ActionConfig::Cat(input_config))
             }
         }
     }
@@ -141,6 +180,11 @@ impl ConfigBuilder {
 impl Default for Neo4jConfigBuilder {
     fn default() -> Self {
         Neo4jConfigBuilder::new()
+    }
+}
+impl Default for InputConfigBuilder {
+    fn default() -> Self {
+        InputConfigBuilder::new()
     }
 }
 

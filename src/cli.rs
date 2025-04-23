@@ -2,6 +2,7 @@ use crate::config::Action;
 use crate::error::Error;
 use clap::{command, Arg, ArgMatches, Command};
 use std::path::PathBuf;
+use crate::config::action;
 
 pub struct Args {
     pub(crate) data_dir: Option<PathBuf>,
@@ -13,15 +14,6 @@ pub struct CliOptions {
     pub(crate) action: Option<Action>,
     pub(crate) args: Args,
 }
-mod cmds {
-    pub(crate) const HELLO: &str = "hello";
-    pub(crate) const SURVEY: &str = "survey";
-    pub(crate) const PING: &str = "ping";
-    pub(crate) const UPLOAD: &str = "upload";
-    pub(crate) const WIPE: &str = "wipe";
-    pub(crate) const ALL: [&str; 5] = [HELLO, SURVEY, PING, UPLOAD, WIPE];
-}
-
 mod about {
     pub(crate) const HELLO: &str = "Prints some config information.";
     pub(crate) const SURVEY: &str = "Surveys the data.";
@@ -35,6 +27,7 @@ mod args {
     pub(crate) const URI: &str = "uri";
     pub(crate) const USER: &str = "user";
     pub(crate) const PASSWORD: &str = "password";
+    pub(crate) const FILE: &str = "file";
 }
 
 mod arg_short {
@@ -42,6 +35,7 @@ mod arg_short {
     pub(crate) const URI: char = 'l';
     pub(crate) const USER: char = 'u';
     pub(crate) const PASSWORD: char = 'p';
+    pub(crate) const FILE: char = 'f';
 }
 
 mod arg_help {
@@ -49,27 +43,28 @@ mod arg_help {
     pub(crate) const URI: &str = "The URI of the Neo4j server.";
     pub(crate) const USER: &str = "The user name for the Neo4j server.";
     pub(crate) const PASSWORD: &str = "The password for the Neo4j server.";
+    pub(crate) const FILE: &str = "The input file";
 }
 
 pub fn get_cli_options() -> Result<CliOptions, Error> {
     let matches =
         add_args(command!())
-        .subcommand(new_command(cmds::HELLO, about::HELLO))
-        .subcommand(new_command(cmds::SURVEY, about::SURVEY))
-            .subcommand(new_command(cmds::PING, about::PING))
-            .subcommand(new_command(cmds::UPLOAD, about::UPLOAD))
-            .subcommand(new_command(cmds::WIPE, about::WIPE))
+        .subcommand(new_command(action::HELLO, about::HELLO))
+        .subcommand(new_command(action::SURVEY, about::SURVEY))
+            .subcommand(new_command(action::PING, about::PING))
+            .subcommand(new_command(action::UPLOAD, about::UPLOAD))
+            .subcommand(new_command(action::WIPE, about::WIPE))
         .get_matches();
     match matches.subcommand() {
-        Some((cmds::HELLO, sub_matches)) =>
+        Some((action::HELLO, sub_matches)) =>
             Ok(new_options(Some(Action::Hello), sub_matches)),
-        Some((cmds::SURVEY, sub_matches)) =>
+        Some((action::SURVEY, sub_matches)) =>
             Ok(new_options(Some(Action::Survey), sub_matches)),
-        Some((cmds::PING, sub_matches)) =>
+        Some((action::PING, sub_matches)) =>
             Ok(new_options(Some(Action::Ping), sub_matches)),
-        Some((cmds::UPLOAD, sub_matches)) =>
+        Some((action::UPLOAD, sub_matches)) =>
             Ok(new_options(Some(Action::Upload), sub_matches)),
-        Some((cmds::WIPE, sub_matches)) =>
+        Some((action::WIPE, sub_matches)) =>
             Ok(new_options(Some(Action::Wipe), sub_matches)),
         Some((command, _)) =>
             Err(Error::from(
@@ -90,13 +85,14 @@ fn add_args(command: Command) -> Command {
         .arg(new_arg(args::URI, arg_short::URI, arg_help::URI))
         .arg(new_arg(args::USER, arg_short::USER, arg_help::USER))
         .arg(new_arg(args::PASSWORD, arg_short::PASSWORD, arg_help::PASSWORD))
+        .arg(new_arg(args::FILE, arg_short::FILE, arg_help::FILE))
 }
 
 fn new_arg(name: &'static str, short: char, help: &'static str) -> Arg {
     Arg::new(name).short(short).help(help)
 }
 fn known_subcommands() -> String {
-    format!("Known subcommands are '{}'.", cmds::ALL.join("', '"))
+    format!("Known subcommands are '{}'.", action::ALL.join("', '"))
 }
 
 fn extract_args(matches: &clap::ArgMatches) -> Args {

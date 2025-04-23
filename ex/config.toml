@@ -1,7 +1,5 @@
 data_dir = "/home/oliverr/ygramul/data"
 
 [neo4j]
-
-uri = "52.201.230.252:7687"
+uri = "54.197.200.223"
 user = "neo4j"
-

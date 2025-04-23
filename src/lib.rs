@@ -12,6 +12,7 @@ mod survey;
 mod upload;
 mod wipe;
 mod tsv;
+mod s3;
 
 pub fn execute(config: &ActionConfig) -> Result<(), Error> {
     match config {
@@ -22,6 +23,7 @@ pub fn execute(config: &ActionConfig) -> Result<(), Error> {
         ActionConfig::Ping(config) => ping::ping_neo4j(config)?,
         ActionConfig::Upload(config) => upload::upload_data(config)?,
         ActionConfig::Wipe(config) => wipe::wipe(config)?,
+        ActionConfig::Cat(config) => s3::cat(config)?,
     }
     Ok(())
 }
