@@ -1,5 +1,8 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::num::ParseFloatError;
+use aws_sdk_s3::error::SdkError;
+use aws_sdk_s3::operation::get_object::GetObjectError;
+use aws_sdk_s3::primitives::ByteStreamError;
 use log::SetLoggerError;
 
 mod errors {
@@ -7,6 +10,9 @@ mod errors {
     pub(crate) const SET_LOGGER_ERROR: &str = "Set logger error";
     pub(crate) const NEO4RS_ERROR: &str = "Neo4rs error";
     pub(crate) const NEO4RS_DE_ERROR: &str = "Neo4rs deserialization error";
+    pub(crate) const PARSE_FLOAT_ERROR: &str = "Parse float error";
+    pub(crate) const GET_OBJECT_ERROR: &str = "Get object error";
+    pub(crate) const BYTE_STREAM_ERROR: &str = "Byte stream error";
 }
 pub struct Error {
     message: String,
@@ -96,6 +102,18 @@ impl From<neo4rs::DeError> for Error {
 
 impl From<ParseFloatError> for Error {
     fn from(error: ParseFloatError) -> Self {
-        Error::new(error.to_string(), Some(Box::new(error)))
+        Error::new(errors::PARSE_FLOAT_ERROR.to_string(), Some(Box::new(error)))
+    }
+}
+
+impl From<SdkError<GetObjectError>> for Error {
+    fn from(error: SdkError<GetObjectError>) -> Self {
+        Error::new(errors::GET_OBJECT_ERROR.to_string(), Some(Box::new(error)))
+    }
+}
+
+impl From<ByteStreamError> for Error {
+    fn from(error: ByteStreamError) -> Self {
+        Error::new(errors::BYTE_STREAM_ERROR.to_string(), Some(Box::new(error)))
     }
 }

@@ -1,8 +1,8 @@
-use std::fmt::Display;
 use crate::config::InputConfig;
 use crate::error::Error;
 use aws_config::BehaviorVersion;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt};
+use std::fmt::Display;
+use tokio::io::AsyncBufReadExt;
 use tokio::runtime::Runtime;
 
 pub(crate) struct S3Uri {
@@ -37,22 +37,24 @@ pub(crate) fn cat(config: &InputConfig) -> Result<(), Error> {
     if let Ok(s3uri) = S3Uri::from_uri(file) {
         let runtime = Runtime::new()?;
         let s3_client = create_s3_client(&runtime)?;
-        let response = runtime.block_on(async {
+        runtime.block_on(async {
             let resp = s3_client.get_object()
                 .bucket(s3uri.bucket)
                 .key(s3uri.key)
                 .send()
                 .await?;
-            let x = resp.body.into_async_read();
-            let body = resp.body.collect().await?;
-            Ok::<_, Error>(body)
+            let body = resp.body;
+            let stream = body.into_async_read();
+            let reader = tokio::io::BufReader::new(stream);
+            let mut lines = reader.lines();
+            while let Some(line) = lines.next_line().await? {
+                println!("{}", line);
+            }
+            Ok::<(), Error>(())
         })?;
-
-        let content = String::from_utf8_lossy(response.as_ref());
-        print!("{}", content);
         Ok(())
     } else {
-        Ok(())
+        todo!();
     }
 }
 
