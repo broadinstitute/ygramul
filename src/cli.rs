@@ -9,6 +9,7 @@ pub struct Args {
     pub(crate) uri: Option<String>,
     pub(crate) user: Option<String>,
     pub(crate) password: Option<String>,
+    pub(crate) file: Option<String>,
 }
 pub struct CliOptions {
     pub(crate) action: Option<Action>,
@@ -20,6 +21,7 @@ mod about {
     pub(crate) const PING: &str = "Pings the Neo4j server.";
     pub(crate) const UPLOAD: &str = "Uploads data to the Neo4j server.";
     pub(crate) const WIPE: &str = "Deletes all data on the Neo4j server.";
+    pub(crate) const CAT: &str = "Prints the content of the input file.";
 }
 
 mod args {
@@ -54,6 +56,7 @@ pub fn get_cli_options() -> Result<CliOptions, Error> {
             .subcommand(new_command(action::PING, about::PING))
             .subcommand(new_command(action::UPLOAD, about::UPLOAD))
             .subcommand(new_command(action::WIPE, about::WIPE))
+            .subcommand(new_command(action::CAT, about::CAT))
         .get_matches();
     match matches.subcommand() {
         Some((action::HELLO, sub_matches)) =>
@@ -66,6 +69,8 @@ pub fn get_cli_options() -> Result<CliOptions, Error> {
             Ok(new_options(Some(Action::Upload), sub_matches)),
         Some((action::WIPE, sub_matches)) =>
             Ok(new_options(Some(Action::Wipe), sub_matches)),
+        Some((action::CAT, sub_matches)) =>
+            Ok(new_options(Some(Action::Cat), sub_matches)),
         Some((command, _)) =>
             Err(Error::from(
                 format!("Unknown command: {}. {}", command, known_subcommands())
@@ -95,12 +100,13 @@ fn known_subcommands() -> String {
     format!("Known subcommands are '{}'.", action::ALL.join("', '"))
 }
 
-fn extract_args(matches: &clap::ArgMatches) -> Args {
+fn extract_args(matches: &ArgMatches) -> Args {
     Args {
         data_dir: matches.get_one::<PathBuf>(args::DATA_DIR).cloned(),
         uri: matches.get_one::<String>(args::URI).cloned(),
         user: matches.get_one::<String>(args::USER).cloned(),
         password: matches.get_one::<String>(args::PASSWORD).cloned(),
+        file: matches.get_one::<String>(args::FILE).cloned(),
     }
 }
 

@@ -124,6 +124,9 @@ impl ConfigBuilder {
         if let Some(password) = cli_options.args.password {
             builder.neo4j_mut().password = Some(password);
         }
+        if let Some(file) = cli_options.args.file {
+            builder.input.get_or_insert_with(InputConfigBuilder::new).file = Some(file);
+        }
         builder
     }
     fn get_action(&self) -> Result<Action, Error> {
