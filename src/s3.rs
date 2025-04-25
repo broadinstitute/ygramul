@@ -2,12 +2,27 @@ use crate::config::InputConfig;
 use crate::error::Error;
 use aws_config::BehaviorVersion;
 use std::fmt::Display;
+use std::fs::File;
 use tokio::io::AsyncBufReadExt;
+use std::io::{BufRead, BufReader};
 use tokio::runtime::Runtime;
 
 pub(crate) struct S3Uri {
     pub(crate) bucket: String,
     pub(crate) key: String,
+}
+
+pub(crate) trait LineConsumer {
+    fn consume(&mut self, line: String) -> Result<(), Error>;
+}
+
+struct LinePrinter {}
+
+impl LineConsumer for LinePrinter {
+    fn consume(&mut self, line: String) -> Result<(), Error> {
+        println!("{}", line);
+        Ok(())
+    }
 }
 
 impl S3Uri {
@@ -33,8 +48,14 @@ impl Display for S3Uri {
 }
 
 pub(crate) fn cat(config: &InputConfig) -> Result<(), Error> {
+    let mut line_consumer = LinePrinter {};
+    process_file(&config, &mut line_consumer)?
+}
+
+fn process_file<C: LineConsumer>(config: &&InputConfig, line_consumer: &mut C) 
+    -> Result<Result<(), Error>, Error> {
     let file = &config.file;
-    if let Ok(s3uri) = S3Uri::from_uri(file) {
+    Ok(if let Ok(s3uri) = S3Uri::from_uri(file) {
         let runtime = Runtime::new()?;
         let s3_client = create_s3_client(&runtime)?;
         runtime.block_on(async {
@@ -48,14 +69,19 @@ pub(crate) fn cat(config: &InputConfig) -> Result<(), Error> {
             let reader = tokio::io::BufReader::new(stream);
             let mut lines = reader.lines();
             while let Some(line) = lines.next_line().await? {
-                println!("{}", line);
+                line_consumer.consume(line)?;
             }
             Ok::<(), Error>(())
         })?;
         Ok(())
     } else {
-        todo!();
-    }
+        let reader = BufReader::new(File::open(file)?);
+        for line in reader.lines() {
+            let line = line?;
+            line_consumer.consume(line)?;
+        }
+        Ok(())
+    })
 }
 
 fn create_s3_client(runtime: &Runtime) -> Result<aws_sdk_s3::Client, Error> {
