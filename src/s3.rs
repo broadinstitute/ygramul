@@ -1,10 +1,9 @@
-use crate::config::InputConfig;
 use crate::error::Error;
 use aws_config::BehaviorVersion;
 use std::fmt::Display;
 use std::fs::File;
-use tokio::io::AsyncBufReadExt;
 use std::io::{BufRead, BufReader};
+use tokio::io::AsyncBufReadExt;
 use tokio::runtime::Runtime;
 
 pub(crate) struct S3Uri {
@@ -47,19 +46,23 @@ impl Display for S3Uri {
     }
 }
 
-pub(crate) fn cat(config: &InputConfig) -> Result<(), Error> {
+pub(crate) fn cat(file: &str) -> Result<(), Error> {
     let mut line_consumer = LinePrinter {};
-    process_file(&config, &mut line_consumer)?
+    process_file(file, &mut line_consumer)
 }
 
-fn process_file<C: LineConsumer>(config: &&InputConfig, line_consumer: &mut C) 
-    -> Result<Result<(), Error>, Error> {
-    let file = &config.file;
-    Ok(if let Ok(s3uri) = S3Uri::from_uri(file) {
+pub(crate) fn ls(dir: &str) -> Result<(), Error> {
+    let mut line_consumer = LinePrinter {};
+    process_entries(dir, &mut line_consumer)
+}
+
+fn process_file<C: LineConsumer>(file: &str, line_consumer: &mut C) -> Result<(), Error> {
+    if let Ok(s3uri) = S3Uri::from_uri(file) {
         let runtime = Runtime::new()?;
         let s3_client = create_s3_client(&runtime)?;
         runtime.block_on(async {
-            let resp = s3_client.get_object()
+            let resp = s3_client
+                .get_object()
                 .bucket(s3uri.bucket)
                 .key(s3uri.key)
                 .send()
@@ -81,7 +84,75 @@ fn process_file<C: LineConsumer>(config: &&InputConfig, line_consumer: &mut C)
             line_consumer.consume(line)?;
         }
         Ok(())
-    })
+    }
+}
+
+enum Iteration {
+    Start,
+    Continuation(String),
+    Complete
+}
+
+fn process_entries<C: LineConsumer>(dir: &str, line_consumer: &mut C) -> Result<(), Error> {
+    if let Ok(s3uri) = S3Uri::from_uri(dir) {
+        let runtime = Runtime::new()?;
+        let s3_client = create_s3_client(&runtime)?;
+        runtime.block_on(async {
+            let mut iteration = Iteration::Start;
+            loop {
+                let request = s3_client
+                    .list_objects_v2()
+                    .bucket(s3uri.bucket.clone())
+                    .prefix(s3uri.key.clone());
+                let request =
+                match &iteration {
+                    Iteration::Start => request,
+                    Iteration::Continuation(token) => 
+                        request.continuation_token(token.clone()),
+                    Iteration::Complete => break
+                };
+                let response = request.send().await?;
+                if response.is_truncated() == Some(true) {
+                    iteration = Iteration::Continuation(
+                        response.next_continuation_token.ok_or_else(|| {
+                            Error::from("No continuation token found in S3 response")
+                        })?
+                    );
+                } else {
+                    iteration = Iteration::Complete;
+                }
+                let contents = response
+                    .contents
+                    .ok_or_else(|| Error::from("No contents found in S3 response"))?;
+                for obj in contents {
+                    let key = obj.key.ok_or_else(|| {
+                        Error::from("No key found in S3 object")
+                    })?;
+                    line_consumer.consume(key)?;
+                }
+            }
+            Ok::<(), Error>(())
+        })
+    } else {
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            let file_os_string = path.file_name().ok_or_else(|| {
+                Error::from(format!(
+                    "Failed to get file name from path '{}'.",
+                    path.display()
+                ))
+            })?;
+            let file_name = file_os_string.to_str().ok_or_else(|| {
+                Error::from(format!(
+                    "Failed to convert file name to string: '{}'.",
+                    file_os_string.to_string_lossy()
+                ))
+            })?;
+            line_consumer.consume(file_name.to_string())?;
+        }
+        Ok(())
+    }
 }
 
 fn create_s3_client(runtime: &Runtime) -> Result<aws_sdk_s3::Client, Error> {

@@ -13,6 +13,7 @@ mod upload;
 mod wipe;
 mod tsv;
 mod s3;
+mod pigean;
 
 pub fn execute(config: &ActionConfig) -> Result<(), Error> {
     match config {
@@ -24,6 +25,8 @@ pub fn execute(config: &ActionConfig) -> Result<(), Error> {
         ActionConfig::Upload(config) => upload::upload_data(config)?,
         ActionConfig::Wipe(config) => wipe::wipe(config)?,
         ActionConfig::Cat(config) => s3::cat(config)?,
+        ActionConfig::Ls(config) => s3::ls(config)?,
+        ActionConfig::Bulk(config) => pigean::create_bulk_files(config)?,
     }
     Ok(())
 }

@@ -1,8 +1,8 @@
 use crate::config::Action;
-use crate::error::Error;
-use clap::{command, Arg, ArgMatches, Command};
-use std::path::PathBuf;
 use crate::config::action;
+use crate::error::Error;
+use clap::{Arg, ArgMatches, Command, command};
+use std::path::PathBuf;
 
 pub struct Args {
     pub(crate) data_dir: Option<PathBuf>,
@@ -10,6 +10,7 @@ pub struct Args {
     pub(crate) user: Option<String>,
     pub(crate) password: Option<String>,
     pub(crate) file: Option<String>,
+    pub(crate) out: Option<String>,
 }
 pub struct CliOptions {
     pub(crate) action: Option<Action>,
@@ -22,6 +23,7 @@ mod about {
     pub(crate) const UPLOAD: &str = "Uploads data to the Neo4j server.";
     pub(crate) const WIPE: &str = "Deletes all data on the Neo4j server.";
     pub(crate) const CAT: &str = "Prints the content of the input file.";
+    pub(crate) const LS: &str = "Lists the content of a directory.";
 }
 
 mod args {
@@ -30,6 +32,7 @@ mod args {
     pub(crate) const USER: &str = "user";
     pub(crate) const PASSWORD: &str = "password";
     pub(crate) const FILE: &str = "file";
+    pub(crate) const OUT: &str = "out";
 }
 
 mod arg_short {
@@ -38,6 +41,7 @@ mod arg_short {
     pub(crate) const USER: char = 'u';
     pub(crate) const PASSWORD: char = 'p';
     pub(crate) const FILE: char = 'f';
+    pub(crate) const OUT: char = 'o';
 }
 
 mod arg_help {
@@ -46,35 +50,25 @@ mod arg_help {
     pub(crate) const USER: &str = "The user name for the Neo4j server.";
     pub(crate) const PASSWORD: &str = "The password for the Neo4j server.";
     pub(crate) const FILE: &str = "The input file";
+    pub(crate) const OUT: &str = "The output directory";
 }
 
 pub fn get_cli_options() -> Result<CliOptions, Error> {
-    let matches =
-        add_args(command!())
+    let matches = add_args(command!())
         .subcommand(new_command(action::HELLO, about::HELLO))
         .subcommand(new_command(action::SURVEY, about::SURVEY))
-            .subcommand(new_command(action::PING, about::PING))
-            .subcommand(new_command(action::UPLOAD, about::UPLOAD))
-            .subcommand(new_command(action::WIPE, about::WIPE))
-            .subcommand(new_command(action::CAT, about::CAT))
+        .subcommand(new_command(action::PING, about::PING))
+        .subcommand(new_command(action::UPLOAD, about::UPLOAD))
+        .subcommand(new_command(action::WIPE, about::WIPE))
+        .subcommand(new_command(action::CAT, about::CAT))
+        .subcommand(new_command(action::LS, about::LS))
         .get_matches();
     match matches.subcommand() {
-        Some((action::HELLO, sub_matches)) =>
-            Ok(new_options(Some(Action::Hello), sub_matches)),
-        Some((action::SURVEY, sub_matches)) =>
-            Ok(new_options(Some(Action::Survey), sub_matches)),
-        Some((action::PING, sub_matches)) =>
-            Ok(new_options(Some(Action::Ping), sub_matches)),
-        Some((action::UPLOAD, sub_matches)) =>
-            Ok(new_options(Some(Action::Upload), sub_matches)),
-        Some((action::WIPE, sub_matches)) =>
-            Ok(new_options(Some(Action::Wipe), sub_matches)),
-        Some((action::CAT, sub_matches)) =>
-            Ok(new_options(Some(Action::Cat), sub_matches)),
-        Some((command, _)) =>
-            Err(Error::from(
+        Some((command, sub_matches)) => Action::try_from(command)
+            .map_err(|_| Error::from(
                 format!("Unknown command: {}. {}", command, known_subcommands())
-            )),
+            ))
+            .map(|action| new_options(Some(action), sub_matches)),
         None => Ok(new_options(None, &matches)),
     }
 }
@@ -85,12 +79,15 @@ fn new_command(name: &'static str, about: &'static str) -> Command {
 
 fn add_args(command: Command) -> Command {
     command
-        .arg(new_arg(args::DATA_DIR, arg_short::DATA_DIR, arg_help::DATA_DIR)
-            .value_parser(clap::value_parser!(PathBuf)))
+        .arg(
+            new_arg(args::DATA_DIR, arg_short::DATA_DIR, arg_help::DATA_DIR)
+                .value_parser(clap::value_parser!(PathBuf)),
+        )
         .arg(new_arg(args::URI, arg_short::URI, arg_help::URI))
         .arg(new_arg(args::USER, arg_short::USER, arg_help::USER))
         .arg(new_arg(args::PASSWORD, arg_short::PASSWORD, arg_help::PASSWORD))
         .arg(new_arg(args::FILE, arg_short::FILE, arg_help::FILE))
+        .arg(new_arg(args::OUT, arg_short::OUT, arg_help::OUT))
 }
 
 fn new_arg(name: &'static str, short: char, help: &'static str) -> Arg {
@@ -107,9 +104,13 @@ fn extract_args(matches: &ArgMatches) -> Args {
         user: matches.get_one::<String>(args::USER).cloned(),
         password: matches.get_one::<String>(args::PASSWORD).cloned(),
         file: matches.get_one::<String>(args::FILE).cloned(),
+        out: matches.get_one::<String>(args::OUT).cloned(),
     }
 }
 
 fn new_options(action: Option<Action>, matches: &ArgMatches) -> CliOptions {
-    CliOptions { action, args: extract_args(matches), }
+    CliOptions {
+        action,
+        args: extract_args(matches),
+    }
 }

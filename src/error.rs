@@ -2,6 +2,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::num::ParseFloatError;
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::GetObjectError;
+use aws_sdk_s3::operation::list_objects_v2::ListObjectsV2Error;
 use aws_sdk_s3::primitives::ByteStreamError;
 use log::SetLoggerError;
 
@@ -12,6 +13,7 @@ mod errors {
     pub(crate) const NEO4RS_DE_ERROR: &str = "Neo4rs deserialization error";
     pub(crate) const PARSE_FLOAT_ERROR: &str = "Parse float error";
     pub(crate) const GET_OBJECT_ERROR: &str = "Get object error";
+    pub(crate) const LIST_OBJECTS_V2_ERROR: &str = "List objects v2 error";
     pub(crate) const BYTE_STREAM_ERROR: &str = "Byte stream error";
 }
 pub struct Error {
@@ -109,6 +111,12 @@ impl From<ParseFloatError> for Error {
 impl From<SdkError<GetObjectError>> for Error {
     fn from(error: SdkError<GetObjectError>) -> Self {
         Error::new(errors::GET_OBJECT_ERROR.to_string(), Some(Box::new(error)))
+    }
+}
+
+impl From<SdkError<ListObjectsV2Error>> for Error {
+    fn from(error: SdkError<ListObjectsV2Error>) -> Self {
+        Error::new(errors::LIST_OBJECTS_V2_ERROR.to_string(), Some(Box::new(error)))
     }
 }
 
