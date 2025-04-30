@@ -1,7 +1,9 @@
+use std::fmt::Display;
 use crate::error::Error;
 use serde::Deserialize;
 use std::path::PathBuf;
 use crate::cli::CliOptions;
+
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Deserialize)]
 #[serde(try_from = "&str")]
@@ -16,6 +18,17 @@ pub enum Action {
     Bulk
 }
 
+pub const ACTIONS: [Action; 8] = [
+    Action::Hello,
+    Action::Survey,
+    Action::Ping,
+    Action::Upload,
+    Action::Wipe,
+    Action::Cat,
+    Action::Ls,
+    Action::Bulk
+];
+
 pub(crate) mod action {
     pub(crate) const HELLO: &str = "hello";
     pub(crate) const SURVEY: &str = "survey";
@@ -27,6 +40,18 @@ pub(crate) mod action {
     pub(crate) const BULK: &str = "bulk";
     pub(crate) const ALL: [&str; 7] = [HELLO, SURVEY, PING, UPLOAD, CAT, LS, BULK];
 }
+
+mod about {
+    pub(crate) const HELLO: &str = "Prints some config information.";
+    pub(crate) const SURVEY: &str = "Surveys the data.";
+    pub(crate) const PING: &str = "Pings the Neo4j server.";
+    pub(crate) const UPLOAD: &str = "Uploads data to the Neo4j server.";
+    pub(crate) const WIPE: &str = "Deletes all data on the Neo4j server.";
+    pub(crate) const CAT: &str = "Prints the content of the input file.";
+    pub(crate) const LS: &str = "Lists the content of a directory.";
+    pub(crate) const BULK: &str = "Creates bulk files for PIGEAN.";
+}
+
 pub struct Neo4jConfig {
     pub(crate) uri: String,
     pub(crate) user: String,
@@ -233,6 +258,48 @@ impl ConfigBuilder {
                 let pigean = pigean.build(out)?;
                 Ok(ActionConfig::Bulk(pigean))
             }
+        }
+    }
+}
+
+impl Display for Action {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Action::Hello => write!(f, "{}", action::HELLO),
+            Action::Survey => write!(f, "{}", action::SURVEY),
+            Action::Ping => write!(f, "{}", action::PING),
+            Action::Upload => write!(f, "{}", action::UPLOAD),
+            Action::Wipe => write!(f, "{}", action::WIPE),
+            Action::Cat => write!(f, "{}", action::CAT),
+            Action::Ls => write!(f, "{}", action::LS),
+            Action::Bulk => write!(f, "{}", action::BULK),
+        }
+    }
+}
+
+impl Action {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Action::Hello => action::HELLO,
+            Action::Survey => action::SURVEY,
+            Action::Ping => action::PING,
+            Action::Upload => action::UPLOAD,
+            Action::Wipe => action::WIPE,
+            Action::Cat => action::CAT,
+            Action::Ls => action::LS,
+            Action::Bulk => action::BULK,
+        }
+    }
+    pub fn about(&self) -> &'static str {
+        match self {
+            Action::Hello => about::HELLO,
+            Action::Survey => about::SURVEY,
+            Action::Ping => about::PING,
+            Action::Upload => about::UPLOAD,
+            Action::Wipe => about::WIPE,
+            Action::Cat => about::CAT,
+            Action::Ls => about::LS,
+            Action::Bulk => about::BULK,
         }
     }
 }

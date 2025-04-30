@@ -1,4 +1,4 @@
-use crate::config::Action;
+use crate::config::{Action, ACTIONS};
 use crate::config::action;
 use crate::error::Error;
 use clap::{Arg, ArgMatches, Command, command};
@@ -16,16 +16,6 @@ pub struct CliOptions {
     pub(crate) action: Option<Action>,
     pub(crate) args: Args,
 }
-mod about {
-    pub(crate) const HELLO: &str = "Prints some config information.";
-    pub(crate) const SURVEY: &str = "Surveys the data.";
-    pub(crate) const PING: &str = "Pings the Neo4j server.";
-    pub(crate) const UPLOAD: &str = "Uploads data to the Neo4j server.";
-    pub(crate) const WIPE: &str = "Deletes all data on the Neo4j server.";
-    pub(crate) const CAT: &str = "Prints the content of the input file.";
-    pub(crate) const LS: &str = "Lists the content of a directory.";
-}
-
 mod args {
     pub(crate) const DATA_DIR: &str = "data-dir";
     pub(crate) const URI: &str = "uri";
@@ -54,15 +44,7 @@ mod arg_help {
 }
 
 pub fn get_cli_options() -> Result<CliOptions, Error> {
-    let matches = add_args(command!())
-        .subcommand(new_command(action::HELLO, about::HELLO))
-        .subcommand(new_command(action::SURVEY, about::SURVEY))
-        .subcommand(new_command(action::PING, about::PING))
-        .subcommand(new_command(action::UPLOAD, about::UPLOAD))
-        .subcommand(new_command(action::WIPE, about::WIPE))
-        .subcommand(new_command(action::CAT, about::CAT))
-        .subcommand(new_command(action::LS, about::LS))
-        .get_matches();
+    let matches = add_subcommands(add_args(command!())).get_matches();
     match matches.subcommand() {
         Some((command, sub_matches)) => Action::try_from(command)
             .map_err(|_| Error::from(
@@ -95,6 +77,12 @@ fn new_arg(name: &'static str, short: char, help: &'static str) -> Arg {
 }
 fn known_subcommands() -> String {
     format!("Known subcommands are '{}'.", action::ALL.join("', '"))
+}
+
+fn add_subcommands(command: Command) -> Command {
+    ACTIONS.into_iter().fold(command, |cmd, subcommand| {
+        cmd.subcommand(new_command(subcommand.name(), subcommand.about()))
+    })
 }
 
 fn extract_args(matches: &ArgMatches) -> Args {

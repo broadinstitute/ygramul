@@ -48,7 +48,7 @@ pub(crate) fn upload_f<R: Read>(key: &[String], reader: BufReader<R>, neo: &Neo,
                                 row_eater: &mut UploadRowEater)
                                  -> Result<(), Error> {
     let eater_maker = FUploadEaterMaker {};
-    let tsv_reader = crate::tsv::TsvReader::new(reader, eater_maker)?;
+    let tsv_reader = crate::tsv::TsvReader::new(reader, '\t', eater_maker)?;
     let query_builder = CreateFactorNodeQueryBuilder::new();
     for row in tsv_reader {
         let row = row?;

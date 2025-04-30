@@ -82,7 +82,8 @@ pub fn upload_rows<R: Read, B: CreateEntityEdgeQueryBuilder>(
     eater_maker: EntityUploadEaterMaker,
     threshold: f64
 ) -> Result<(), Error> {
-    let tsv_reader: TsvReader<_, EntityUploadEaterMaker> = TsvReader::new(reader, eater_maker)?;
+    let tsv_reader: TsvReader<_, EntityUploadEaterMaker> = 
+        TsvReader::new(reader, '\t', eater_maker)?;
     for row in tsv_reader {
         upload_row(key, neo, query_builder, row_eater, row?, threshold)?;
     }
