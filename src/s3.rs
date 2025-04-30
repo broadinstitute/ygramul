@@ -24,6 +24,23 @@ impl LineConsumer for LinePrinter {
     }
 }
 
+struct FileCollector {
+    dir: String,
+    files: Vec<String>,
+}
+
+impl FileCollector {
+    pub(crate) fn new(dir: String) -> FileCollector {
+        FileCollector { dir, files: Vec::new() }
+    }
+}
+impl LineConsumer for FileCollector {
+    fn consume(&mut self, line: String) -> Result<(), Error> {
+        self.files.push(format!("{}/{}", self.dir, line));
+        Ok(())
+    }
+}
+
 impl S3Uri {
     pub(crate) fn new(bucket: String, key: String) -> S3Uri {
         S3Uri { bucket, key }
@@ -54,6 +71,12 @@ pub(crate) fn cat(file: &str) -> Result<(), Error> {
 pub(crate) fn ls(dir: &str) -> Result<(), Error> {
     let mut line_consumer = LinePrinter {};
     process_entries(dir, &mut line_consumer)
+}
+
+pub(crate) fn collect(dir: &str) -> Result<Vec<String>, Error> {
+    let mut file_collector = FileCollector::new(dir.to_string());
+    process_entries(dir, &mut file_collector)?;
+    Ok(file_collector.files)
 }
 
 fn process_file<C: LineConsumer>(file: &str, line_consumer: &mut C) -> Result<(), Error> {

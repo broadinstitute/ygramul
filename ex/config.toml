@@ -5,7 +5,7 @@ uri = "54.197.200.223"
 user = "neo4j"
 
 [pigean]
-data_dir = "s3://dig-analysis-data/out/pigean/staging/pigean/portal/"
+data_dir = "s3://dig-analysis-data/out/pigean/staging/pigean/"
 sub_dir = "cfde"
-factors_dir = "s3://psmadbec-test/backup/old-pigean/factor/sigma=2/size=small/portal/"
+factors_dir = "s3://dig-analysis-data/out/pigean/staging/factor/"
 pheno_names = "/home/oliverr/pigean/pigean-phenotypes.csv"
