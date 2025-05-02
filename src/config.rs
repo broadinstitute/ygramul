@@ -80,7 +80,6 @@ pub struct PigeanConfig {
     pub(crate) data_dir: String,
     pub(crate) sub_dir: String,
     pub(crate) factors_dir: String,
-    pub(crate) pheno_names: String,
     pub(crate) out: String,
 }
 
@@ -104,7 +103,6 @@ pub struct PigeanConfigBuilder {
     data_dir: Option<String>,
     sub_dir: Option<String>,
     factors_dir: Option<String>,
-    pheno_names: Option<String>,
 }
 
 impl Neo4jConfigBuilder {
@@ -131,14 +129,11 @@ impl PigeanConfigBuilder {
         let data_dir: Option<String> = None;
         let sub_dir: Option<String> = None;
         let factors_dir: Option<String> = None;
-        let pheno_names: Option<String> = None;
-        PigeanConfigBuilder {
-            data_dir, sub_dir, factors_dir, pheno_names
-        }
+        PigeanConfigBuilder { data_dir, sub_dir, factors_dir }
     }
     pub fn build(self, out: String) -> Result<PigeanConfig, Error> {
         let PigeanConfigBuilder {
-            data_dir, sub_dir, factors_dir, pheno_names
+            data_dir, sub_dir, factors_dir
         } = self;
         let data_dir =
             data_dir.ok_or(Error::from("No PIGEAN data directory specified."))?;
@@ -146,10 +141,8 @@ impl PigeanConfigBuilder {
             sub_dir.ok_or(Error::from("No PIGEAN sub directory specified."))?;
         let factors_dir =
             factors_dir.ok_or(Error::from("No PIGEAN factors directory specified."))?;
-        let pheno_names =
-            pheno_names.ok_or(Error::from("No phenotype names file specified."))?;
         Ok(PigeanConfig {
-            data_dir, sub_dir, factors_dir, pheno_names, out
+            data_dir, sub_dir, factors_dir, out
         })
     }
 }

@@ -1,5 +1,6 @@
 use crate::error::Error;
 use std::io::{BufRead, BufReader, Read};
+use crate::s3::LineConsumer;
 
 pub(crate) trait TsvEater {
     type Row;
@@ -35,14 +36,43 @@ impl<R: Read, M: TsvEaterMaker> Iterator for TsvReader<R, M> {
     fn next(&mut self) -> Option<Self::Item> {
         self.lines.next().map(|line| {
             line.map_err(Error::from).and_then(|line| {
-                let mut eater = self.tsv_eater_maker.make();
-                for (name, value) 
-                in self.columns.iter().zip(line.split(self.separator)) {
-                    eater.field(name, value)?;
-                }
-                eater.finish()
+                parse_record(&self.tsv_eater_maker, &self.columns, line, self.separator)
             })
         })
     }
 }
 
+fn parse_record<M: TsvEaterMaker>(tsv_eater_maker: &M, columns: &[String], line: String, 
+                                  separator: char) -> Result<M::Row, Error> {
+    let mut eater = tsv_eater_maker.make();
+    for (name, value) in columns.iter().zip(line.split(separator)) {
+        eater.field(name, value)?;
+    }
+    eater.finish()
+}
+
+pub(crate) struct TsvConsumer<M: TsvEaterMaker, F: FnMut(M::Row) -> Result<(), Error>> {
+    separator: char,
+    columns: Option<Vec<String>>,
+    tsv_eater_maker: M,
+    consumer: F
+}
+
+impl<M: TsvEaterMaker, F: FnMut(M::Row) -> Result<(), Error>> TsvConsumer<M, F> {
+    pub(crate) fn new(separator: char, tsv_eater_maker: M, consumer: F) -> Self {
+        TsvConsumer { separator, columns: None, tsv_eater_maker, consumer }
+    }
+}
+
+impl<M: TsvEaterMaker, F: FnMut(M::Row) -> Result<(), Error>> LineConsumer for TsvConsumer<M, F> {
+    fn consume(&mut self, line: String) -> Result<(), Error> {
+        if let Some(columns) = &self.columns {
+            let item = 
+                parse_record(&self.tsv_eater_maker, columns, line, self.separator)?;
+            (self.consumer)(item)?;
+        } else {
+            self.columns = Some(line.split(self.separator).map(|s| s.to_string()).collect());
+        }
+        Ok(())
+    }
+}

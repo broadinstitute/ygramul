@@ -1,5 +1,7 @@
-mod pheno_names;
+mod pheno_genes;
+mod pheno_genesets;
 
+use std::path::Path;
 use crate::config::PigeanConfig;
 use crate::error::Error;
 use crate::s3;
@@ -18,30 +20,35 @@ struct FileInfo {
 }
 
 pub(crate) fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
-    let pheno_names = pheno_names::pheno_names(&config.pheno_names)?;
+    let mut pheno_gene_files: Vec<FileInfo> = Vec::new();
+    let mut pheno_geneset_files: Vec<FileInfo> = Vec::new();
     let data_files = s3::collect(&config.data_dir)?;
     for data_file in data_files {
         match classify_file(&data_file, &config.sub_dir) {
             Some(file_info) => match file_info.kind {
                 FileKind::Ggss => {
-                    todo!()
+                    ignore_file(&file_info.name)?;
                 }
                 FileKind::Gss => {
-                    todo!()
+                    pheno_geneset_files.push(file_info);
                 }
                 FileKind::Gs => {
-                    todo!()
+                    pheno_gene_files.push(file_info);
                 }
                 FileKind::Ge => {
-                    todo!()
+                    ignore_file(&file_info.name)?;
                 }
             },
             None => {
-                todo!()
+                handle_unclassified_file(&data_file)?;
             }
         }
     }
-    todo!()
+    let pheno_gene_file = Path::new(&config.out).join("pheno_gene.tsv");
+    pheno_genes::add_files(&pheno_gene_files, &pheno_gene_file)?;
+    let pheno_geneset_file = Path::new(&config.out).join("pheno_geneset.tsv");
+    pheno_genesets::add_files(&pheno_geneset_files, &pheno_geneset_file)?;
+    todo!("Create bulk files. Also include factors.");
 }
 
 fn classify_file(file: &str, sub_dir: &str) -> Option<FileInfo> {
@@ -82,4 +89,12 @@ fn last_three_parts(string: &str) -> Option<(&str, &str, &str)> {
     } else {
         None
     }
+}
+
+fn handle_unclassified_file(file: &str) -> Result<(), Error> {
+    ignore_file(file)
+}
+
+fn ignore_file(_file: &str) -> Result<(), Error> {
+    Ok(())
 }
