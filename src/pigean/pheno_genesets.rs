@@ -57,7 +57,7 @@ impl TsvEater for PhenosGenesetTsvEater {
 
     fn field(&mut self, name: &str, value: &str) -> Result<(), Error> {
         match name {
-            "GeneSet" => self.gene_set = Some(value.to_string()),
+            "Gene_Set" => self.gene_set = Some(value.to_string()),
             "beta_uncorrected" => {
                 self.beta_uncorrected = value.parse().unwrap_or(f64::NAN)
             }
