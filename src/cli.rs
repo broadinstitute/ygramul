@@ -1,7 +1,7 @@
+use crate::config;
 use crate::config::{Action, ACTIONS};
-use crate::config::action;
 use crate::error::Error;
-use clap::{Arg, ArgMatches, Command, command};
+use clap::{command, Arg, ArgMatches, Command};
 use std::path::PathBuf;
 
 pub struct Args {
@@ -76,7 +76,7 @@ fn new_arg(name: &'static str, short: char, help: &'static str) -> Arg {
     Arg::new(name).short(short).help(help)
 }
 fn known_subcommands() -> String {
-    format!("Known subcommands are '{}'.", action::ALL.join("', '"))
+    format!("Known subcommands are '{}'.", config::all_actions_list())
 }
 
 fn add_subcommands(command: Command) -> Command {

@@ -1,11 +1,11 @@
 use crate::error::Error;
-use crate::pigean::FileInfo;
+use crate::pigean::phenos::FileInfo;
 use crate::s3;
 use crate::s3::FilePath;
 use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::Path;
 
 pub(crate) struct PhenoGene {
     pub(crate) gene: String,
@@ -91,12 +91,12 @@ impl TsvEaterMaker for PhenosGenesTsvEaterMaker {
 }
 fn add_file<W: Write>(
     file: &FileInfo,
-    consumer: &mut PhenosGenesFile<W>,
+    writer: &mut PhenosGenesFile<W>,
 ) -> Result<(), Error> {
     let mut tsv_consumer = 
         TsvConsumer::new('\t', PhenosGenesTsvEaterMaker {}, |pheno_gene| {
         if pheno_gene.combined > 1.0 {
-            consumer.write_pheno_gene(&file.pheno, pheno_gene)
+            writer.write_pheno_gene(&file.pheno, pheno_gene)
         } else {
             Ok(())
         }
@@ -107,10 +107,10 @@ fn add_file<W: Write>(
     Ok(())
 }
 
-pub(crate) fn add_files(files: &[FileInfo], out_file: &PathBuf) -> Result<(), Error> {
-    let mut consumer = PhenosGenesFile::new(File::create(out_file)?)?;
+pub(crate) fn add_files(files: &[FileInfo], out_file: &Path) -> Result<(), Error> {
+    let mut writer = PhenosGenesFile::new(File::create(out_file)?)?;
     for file in files {
-        add_file(file, &mut consumer)?;
+        add_file(file, &mut writer)?;
     }
     Ok(())
 }

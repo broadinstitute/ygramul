@@ -15,10 +15,11 @@ pub enum Action {
     Wipe,
     Cat,
     Ls,
-    Bulk
+    Bulk,
+    Factors
 }
 
-pub const ACTIONS: [Action; 8] = [
+pub const ACTIONS: [Action; 9] = [
     Action::Hello,
     Action::Survey,
     Action::Ping,
@@ -26,7 +27,8 @@ pub const ACTIONS: [Action; 8] = [
     Action::Wipe,
     Action::Cat,
     Action::Ls,
-    Action::Bulk
+    Action::Bulk,
+    Action::Factors
 ];
 
 pub(crate) mod action {
@@ -38,7 +40,7 @@ pub(crate) mod action {
     pub(crate) const CAT: &str = "cat";
     pub(crate) const LS: &str = "ls";
     pub(crate) const BULK: &str = "bulk";
-    pub(crate) const ALL: [&str; 7] = [HELLO, SURVEY, PING, UPLOAD, CAT, LS, BULK];
+    pub(crate) const FACTORS: &str = "factors";
 }
 
 mod about {
@@ -49,7 +51,8 @@ mod about {
     pub(crate) const WIPE: &str = "Deletes all data on the Neo4j server.";
     pub(crate) const CAT: &str = "Prints the content of the input file.";
     pub(crate) const LS: &str = "Lists the content of a directory.";
-    pub(crate) const BULK: &str = "Creates bulk files for PIGEAN.";
+    pub(crate) const BULK: &str = "Creates pheno/genes/gene sets bulk files for PIGEAN.";
+    pub(crate) const FACTORS: &str = "Creates factors/genes/gene sets bulk files for PIGEAN.";
 }
 
 pub struct Neo4jConfig {
@@ -65,7 +68,8 @@ pub enum ActionConfig {
     Wipe(ClientConfig),
     Cat(String),
     Ls(String),
-    Bulk(PigeanConfig)
+    Bulk(PigeanConfig),
+    Factors(PigeanConfig),
 }
 pub struct LocalConfig {
     pub(crate) data_dir: PathBuf,
@@ -80,6 +84,7 @@ pub struct PigeanConfig {
     pub(crate) data_dir: String,
     pub(crate) sub_dir: String,
     pub(crate) factors_dir: String,
+    pub(crate) factors_sub_dir: String,
     pub(crate) out: String,
 }
 
@@ -103,6 +108,7 @@ pub struct PigeanConfigBuilder {
     data_dir: Option<String>,
     sub_dir: Option<String>,
     factors_dir: Option<String>,
+    factors_sub_dir: Option<String>,
 }
 
 impl Neo4jConfigBuilder {
@@ -129,11 +135,12 @@ impl PigeanConfigBuilder {
         let data_dir: Option<String> = None;
         let sub_dir: Option<String> = None;
         let factors_dir: Option<String> = None;
-        PigeanConfigBuilder { data_dir, sub_dir, factors_dir }
+        let factors_sub_dir: Option<String> = None;
+        PigeanConfigBuilder { data_dir, sub_dir, factors_dir, factors_sub_dir }
     }
     pub fn build(self, out: String) -> Result<PigeanConfig, Error> {
         let PigeanConfigBuilder {
-            data_dir, sub_dir, factors_dir
+            data_dir, sub_dir, factors_dir, factors_sub_dir
         } = self;
         let data_dir =
             data_dir.ok_or(Error::from("No PIGEAN data directory specified."))?;
@@ -141,8 +148,10 @@ impl PigeanConfigBuilder {
             sub_dir.ok_or(Error::from("No PIGEAN sub directory specified."))?;
         let factors_dir =
             factors_dir.ok_or(Error::from("No PIGEAN factors directory specified."))?;
+        let factors_sub_dir =
+            factors_sub_dir.ok_or(Error::from("No PIGEAN factors sub directory specified."))?;
         Ok(PigeanConfig {
-            data_dir, sub_dir, factors_dir, out
+            data_dir, sub_dir, factors_dir, factors_sub_dir, out
         })
     }
 }
@@ -186,8 +195,7 @@ impl ConfigBuilder {
     }
     fn get_action(&self) -> Result<Action, Error> {
         self.action.ok_or(Error::from(
-            format!("No action specified. Possible actions are {}.",
-                    action::ALL.join(", "))
+            format!("No action specified. Possible actions are {}.", all_actions_list())
         ))
     }
     pub fn build(self) -> Result<ActionConfig, Error> {
@@ -251,6 +259,15 @@ impl ConfigBuilder {
                 let pigean = pigean.build(out)?;
                 Ok(ActionConfig::Bulk(pigean))
             }
+            Action::Factors => {
+                let ConfigBuilder { pigean, out, .. } = self;
+                let pigean = 
+                    pigean.ok_or_else(|| Error::from("No PIGEAN configuration specified."))?;
+                let out = 
+                    out.ok_or_else(|| Error::from("No output directory specified."))?;
+                let pigean = pigean.build(out)?;
+                Ok(ActionConfig::Factors(pigean))
+            }
         }
     }
 }
@@ -266,6 +283,7 @@ impl Display for Action {
             Action::Cat => write!(f, "{}", action::CAT),
             Action::Ls => write!(f, "{}", action::LS),
             Action::Bulk => write!(f, "{}", action::BULK),
+            Action::Factors => write!(f, "{}", action::FACTORS),
         }
     }
 }
@@ -281,6 +299,7 @@ impl Action {
             Action::Cat => action::CAT,
             Action::Ls => action::LS,
             Action::Bulk => action::BULK,
+            Action::Factors => action::FACTORS,
         }
     }
     pub fn about(&self) -> &'static str {
@@ -293,6 +312,7 @@ impl Action {
             Action::Cat => about::CAT,
             Action::Ls => about::LS,
             Action::Bulk => about::BULK,
+            Action::Factors => about::FACTORS,
         }
     }
 }
@@ -325,6 +345,7 @@ impl TryFrom<&str> for Action {
             action::CAT => Ok(Action::Cat),
             action::LS => Ok(Action::Ls),
             action::BULK => Ok(Action::Bulk),
+            action::FACTORS => Ok(Action::Factors),
             _ => Err(Error::from(format!("Unknown action: {}", value))),
         }
     }
@@ -345,4 +366,8 @@ impl TryFrom<&str> for ConfigBuilder {
 
 fn neo4j_config(builder: Option<Neo4jConfigBuilder>) -> Result<Neo4jConfig, Error> {
     builder.ok_or(Error::from("No Neo4j configuration (neo4j) specified."))?.build()
+}
+
+pub(crate) fn all_actions_list() -> String {
+    ACTIONS.map(|action| action.to_string()).join(", ")
 }
