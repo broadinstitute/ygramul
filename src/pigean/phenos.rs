@@ -20,7 +20,7 @@ pub struct FileInfo {
 }
 
 pub fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
-    info!("Finding all files in {} for pheno-gene-genset relations", config.data_dir);
+    info!("Finding all files in {} for pheno-gene-geneset relations", config.data_dir);
     let mut pheno_gene_files: Vec<FileInfo> = Vec::new();
     let mut pheno_geneset_files: Vec<FileInfo> = Vec::new();
     let data_files = s3::collect(&config.data_dir)?;
@@ -45,7 +45,7 @@ pub fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
             }
         }
     }
-    info!("Found {} pheno-gene files and {} pheno-genset files", pheno_gene_files.len(), 
+    info!("Found {} pheno-gene files and {} pheno-geneset files", pheno_gene_files.len(), 
         pheno_geneset_files.len());
     let pheno_gene_file = Path::new(&config.out).join("pheno_gene.tsv");
     info!("Writing pheno-gene file to {}", pheno_gene_file.display());   

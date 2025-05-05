@@ -44,13 +44,13 @@ pub(crate) fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
             }
         }
     }
-    info!("Found {} factor-gene files and {} factor-genset files", factor_gene_files.len(), 
+    info!("Found {} factor-gene files and {} factor-geneset files", factor_gene_files.len(), 
         factor_geneset_files.len());
     let factor_gene_file = Path::new(&config.out).join("factor_gene.tsv");
     info!("Writing factor-gene file to {}", factor_gene_file.display());
     gene_factors::add_files(&factor_gene_files, &factor_gene_file)?;
     let factor_geneset_file = Path::new(&config.out).join("factor_geneset.tsv");
-    info!("Writing factor-genset file to {}", factor_geneset_file.display());
+    info!("Writing factor-geneset file to {}", factor_geneset_file.display());
     geneset_factors::add_files(&factor_geneset_files, &factor_geneset_file)?;
     Ok(())
 }
