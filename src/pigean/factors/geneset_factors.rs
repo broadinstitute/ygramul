@@ -24,11 +24,7 @@ impl<W: Write> GeneSetFactorsFile<W> {
     }
 
     fn write_gene_set_factor(&mut self, item: GeneSetFactor) -> Result<(), Error> {
-        writeln!(
-            self.writer,
-            "{},{},{}",
-            item.factor.name, item.gene_set, item.weight
-        )?;
+        writeln!(self.writer, "{},{},{}", item.factor, item.gene_set, item.weight)?;
         Ok(())
     }
     fn write_set_gene_factors(
@@ -90,11 +86,7 @@ impl TsvEater for GeneFactorsTsvEater {
         let gene_factors = self.factor_weights.into_iter().map(|fw| {
             let FactorWeight { prefix, weight } = fw;
             let factor = Factor::new(prefix, self.pheno.clone());
-            GeneSetFactor {
-                factor,
-                gene_set: gene_set.clone(),
-                weight,
-            }
+            GeneSetFactor { factor, gene_set: gene_set.clone(), weight }
         }).collect();
         Ok(gene_factors)
     }

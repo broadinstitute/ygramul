@@ -24,11 +24,7 @@ impl<W: Write> GeneFactorsFile<W> {
     }
 
     fn write_gene_factor(&mut self, item: GeneFactor) -> Result<(), Error> {
-        writeln!(
-            self.writer,
-            "{},{},{}",
-            item.factor.name, item.gene, item.weight
-        )?;
+        writeln!(self.writer, "{},{},{}", item.factor, item.gene, item.weight)?;
         Ok(())
     }
     fn write_gene_factors(
