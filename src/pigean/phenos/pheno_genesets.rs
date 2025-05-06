@@ -96,7 +96,11 @@ fn add_file<W: Write>(
 ) -> Result<(), Error> {
     let mut tsv_consumer =
         TsvConsumer::new('\t', PhenosGenesetTsvEaterMaker {}, |item| {
-            consumer.write_pheno_geneset(&file.pheno, item)
+            if item.beta_uncorrected > 0.01 {
+                consumer.write_pheno_geneset(&file.pheno, item)
+            } else {
+                Ok(())
+            }
         });
     let file_path = FilePath::from_path(&file.name)?;
     s3::process_file(&file_path, &mut tsv_consumer)?;

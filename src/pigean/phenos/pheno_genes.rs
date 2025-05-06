@@ -20,7 +20,7 @@ struct PhenosGenesFile<W: Write> {
 
 impl<W: Write> PhenosGenesFile<W> {
     pub(crate) fn new(mut writer: W) -> Result<Self, Error> {
-        writeln!(writer, "pheno,gene,combined,log_bfs,prior")?;
+        writeln!(writer, "pheno,gene,combined,log_bf,prior")?;
         Ok(PhenosGenesFile { writer })
     }
     fn write_pheno_gene(&mut self, pheno: &str, item: PhenoGene) -> Result<(), Error> {

@@ -47,10 +47,10 @@ pub fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
     }
     info!("Found {} pheno-gene files and {} pheno-geneset files", pheno_gene_files.len(), 
         pheno_geneset_files.len());
-    let pheno_gene_file = Path::new(&config.out).join("pheno_gene.tsv");
+    let pheno_gene_file = Path::new(&config.out).join("pheno_gene.csv");
     info!("Writing pheno-gene file to {}", pheno_gene_file.display());   
     pheno_genes::add_files(&pheno_gene_files, &pheno_gene_file)?;
-    let pheno_geneset_file = Path::new(&config.out).join("pheno_geneset.tsv");
+    let pheno_geneset_file = Path::new(&config.out).join("pheno_geneset.csv");
     info!("Writing pheno-genset file to {}", pheno_geneset_file.display());
     pheno_genesets::add_files(&pheno_geneset_files, &pheno_geneset_file)?;
     info!("Finished writing pheno-gene and pheno-genset files");
