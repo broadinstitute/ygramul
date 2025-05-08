@@ -7,10 +7,8 @@ mod pheno_genes;
 mod pheno_genesets;
 
 enum FileKind {
-    Ggss,
-    Gss,
-    Gs,
-    Ge,
+    PhenoGeneSet,
+    PhenoGene,
 }
 
 pub struct FileInfo {
@@ -27,17 +25,11 @@ pub fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
     for data_file in data_files {
         match classify_file(&data_file, &config.sub_dir) {
             Some(file_info) => match file_info.kind {
-                FileKind::Ggss => {
-                    pigean::ignore_file(&file_info.name)?;
-                }
-                FileKind::Gss => {
+                FileKind::PhenoGeneSet => {
                     pheno_geneset_files.push(file_info);
                 }
-                FileKind::Gs => {
+                FileKind::PhenoGene => {
                     pheno_gene_files.push(file_info);
-                }
-                FileKind::Ge => {
-                    pigean::ignore_file(&file_info.name)?;
                 }
             },
             None => {
@@ -62,10 +54,8 @@ fn classify_file(file: &str, sub_dir: &str) -> Option<FileInfo> {
         if sub == sub_dir {
             let pheno = pheno.to_string();
             let file_kind = match local {
-                "ggss.out" => FileKind::Ggss,
-                "gss.out" => FileKind::Gss,
-                "gs.out" => FileKind::Gs,
-                "ge.out" => FileKind::Ge,
+                "gss.out" => FileKind::PhenoGeneSet,
+                "gs.out" => FileKind::PhenoGene,
                 _ => return None,
             };
             Some(FileInfo {
