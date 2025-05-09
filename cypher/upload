@@ -1,0 +1,10 @@
+CREATE CONSTRAINT trait_id FOR (trait:Trait) REQUIRE trait.id IS UNIQUE;
+CREATE CONSTRAINT gene_id FOR (gene:Gene) REQUIRE gene.id IS UNIQUE;
+CREATE CONSTRAINT factor_id FOR (factor:Factor) REQUIRE factor.id IS UNIQUE;
+CREATE CONSTRAINT gene_set_id FOR (gene_set:GeneSet) REQUIRE gene_set.id IS UNIQUE;
+LOAD CSV WITH HEADERS FROM 'file:///pheno_gene.csv' AS row MERGE (t:Trait { id:row.pheno}) MERGE (g:Gene {id: row.gene } ) MERGE (t)-[e:TRAIT_GENE]->(g) SET e.combined = toFloat(row.combined) SET e.log_bf = toFloat(row.log_bfs) SET e.prior = toFloat(row.prior);
+LOAD CSV WITH HEADERS FROM 'file:///pheno_geneset.csv' AS row MERGE (t:Trait { id:row.pheno}) MERGE (gs:GeneSet {id: row.gene_set } ) MERGE (t)-[e:TRAIT_GENE_SET]->(gs) SET e.beta_uncorrected = toFloat(row.beta_uncorrected) SET e.beta = toFloat(row.beta);
+LOAD CSV WITH HEADERS FROM 'file:///pheno_geneset.csv' AS row CALL(row) { MERGE (t:Trait { id:row.pheno}) MERGE (gs:GeneSet {id: row.gene_set } ) MERGE (t)-[e:TRAIT_GENE_SET]->(gs) SET e.beta_uncorrected = toFloat(row.beta_uncorrected) SET e.beta = toFloat(row.beta) } IN TRANSACTIONS OF 200 ROWS;
+LOAD CSV WITH HEADERS FROM 'file:///factor_gene.csv' AS row CALL(row) { MERGE (f:Factor { id:row.factor }) MERGE (g:Gene {id: row.gene } ) MERGE (f)-[e:FACTOR_GENE]->(g) SET e.weight = toFloat(row.weight) } IN TRANSACTIONS OF 200 ROWS;
+LOAD CSV WITH HEADERS FROM 'file:///phenotype_names.csv' AS row MERGE (t:Trait { id:row.phenotype }) SET t.label = row.phenotype_name;
+LOAD CSV WITH HEADERS FROM 'file:///factor_labels.csv' AS row CALL(row) { MERGE (f:Factor { id:row.factor }) SET f.label = row.label } IN TRANSACTIONS OF 200 ROWS;
