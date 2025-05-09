@@ -12,7 +12,7 @@ enum FileKind {
 }
 
 pub struct FileInfo {
-    pub(crate) name: String,
+    pub(crate) path: String,
     pub(crate) pheno: String,
     kind: FileKind,
 }
@@ -59,7 +59,7 @@ fn classify_file(file: &str, sub_dir: &str) -> Option<FileInfo> {
                 _ => return None,
             };
             Some(FileInfo {
-                name: file.to_string(),
+                path: file.to_string(),
                 pheno,
                 kind: file_kind,
             })

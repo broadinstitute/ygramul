@@ -1,5 +1,6 @@
 mod gene_factors;
 mod geneset_factors;
+mod factor_labels;
 
 use std::fmt::Display;
 use std::path::Path;
@@ -9,34 +10,39 @@ use crate::error::Error;
 use crate::{pigean, s3};
 
 pub(crate) struct Factor {
-    pub(crate) name: String,
+    pub(crate) prefix: String,
     pub(crate) pheno: String,
 }
 
-enum FileKind {
-    Gc,
-    Gsac
+enum FactorFileKind {
+    Genes,
+    GeneSets,
+    Labels
 }
 
 pub struct FileInfo {
-    pub(crate) name: String,
+    pub(crate) path: String,
     pub(crate) pheno: String,
-    kind: FileKind,
+    kind: FactorFileKind,
 }
 
 pub(crate) fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
     info!("Finding all files in {} for factor-gene-genset relations", config.factors_dir);
     let mut factor_gene_files: Vec<FileInfo> = Vec::new();
     let mut factor_geneset_files: Vec<FileInfo> = Vec::new();
+    let mut factor_label_files: Vec<FileInfo> = Vec::new();
     let data_files = s3::collect(&config.factors_dir)?;
     for data_file in data_files {
         match classify_file(&data_file, &config.factors_sub_dir) {
             Some(file_info) => match file_info.kind {
-                FileKind::Gc => {
+                FactorFileKind::Genes => {
                     factor_gene_files.push(file_info);
                 }
-                FileKind::Gsac => {
+                FactorFileKind::GeneSets => {
                     factor_geneset_files.push(file_info);
+                },
+                FactorFileKind::Labels => {
+                    factor_label_files.push(file_info);
                 }
             },
             None => {
@@ -52,6 +58,9 @@ pub(crate) fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
     let factor_geneset_file = Path::new(&config.out).join("factor_geneset.csv");
     info!("Writing factor-geneset file to {}", factor_geneset_file.display());
     geneset_factors::add_files(&factor_geneset_files, &factor_geneset_file)?;
+    let factor_labels_file = Path::new(&config.out).join("factor_labels.csv");
+    info!("Writing factor-labels file to {}", factor_labels_file.display());
+    factor_labels::add_files(&factor_label_files, &factor_labels_file)?;
     Ok(())
 }
 
@@ -60,12 +69,13 @@ fn classify_file(file: &str, sub_dir: &str) -> Option<FileInfo> {
         if sub == sub_dir {
             let pheno = pheno.to_string();
             let kind = match local {
-                "gc.out" => FileKind::Gc,
-                "gsac.out" => FileKind::Gsac,
+                "gc.out" => FactorFileKind::Genes,
+                "gsac.out" => FactorFileKind::GeneSets,
+                "f.out" => FactorFileKind::Labels,
                 _ => return None,
             };
             Some(FileInfo {
-                name: file.to_string(),
+                path: file.to_string(),
                 pheno,
                 kind,
             })
@@ -78,12 +88,12 @@ fn classify_file(file: &str, sub_dir: &str) -> Option<FileInfo> {
 }
 
 impl Factor {
-    pub(crate) fn new(name: String, pheno: String) -> Self {
-        Factor { name, pheno }
+    pub(crate) fn new(prefix: String, pheno: String) -> Self {
+        Factor { prefix, pheno }
     }
 }
 impl Display for Factor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}_{}", self.name, self.pheno)
+        write!(f, "{}_{}", self.prefix, self.pheno)
     }
 }

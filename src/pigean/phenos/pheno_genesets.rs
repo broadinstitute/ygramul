@@ -102,7 +102,7 @@ fn add_file<W: Write>(
                 Ok(())
             }
         });
-    let file_path = FilePath::from_path(&file.name)?;
+    let file_path = FilePath::from_path(&file.path)?;
     s3::process_file(&file_path, &mut tsv_consumer)?;
     Ok(())
 }
