@@ -1,6 +1,6 @@
 mod gene_factors;
 mod geneset_factors;
-mod factor_labels;
+mod pheno_factors;
 
 use std::fmt::Display;
 use std::path::Path;
@@ -17,7 +17,7 @@ pub(crate) struct Factor {
 enum FactorFileKind {
     Genes,
     GeneSets,
-    Labels
+    Phenos
 }
 
 pub struct FileInfo {
@@ -41,7 +41,7 @@ pub(crate) fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
                 FactorFileKind::GeneSets => {
                     factor_geneset_files.push(file_info);
                 },
-                FactorFileKind::Labels => {
+                FactorFileKind::Phenos => {
                     factor_label_files.push(file_info);
                 }
             },
@@ -58,9 +58,9 @@ pub(crate) fn create_bulk_files(config: &PigeanConfig) -> Result<(), Error> {
     let factor_geneset_file = Path::new(&config.out).join("factor_geneset.csv");
     info!("Writing factor-geneset file to {}", factor_geneset_file.display());
     geneset_factors::add_files(&factor_geneset_files, &factor_geneset_file)?;
-    let factor_labels_file = Path::new(&config.out).join("factor_labels.csv");
-    info!("Writing factor-labels file to {}", factor_labels_file.display());
-    factor_labels::add_files(&factor_label_files, &factor_labels_file)?;
+    let factor_pheno_file = Path::new(&config.out).join("factor_phenos.csv");
+    info!("Writing factor-pheno file to {}", factor_pheno_file.display());
+    pheno_factors::add_files(&factor_label_files, &factor_pheno_file)?;
     Ok(())
 }
 
@@ -71,7 +71,7 @@ fn classify_file(file: &str, sub_dir: &str) -> Option<FileInfo> {
             let kind = match local {
                 "gc.out" => FactorFileKind::Genes,
                 "gsac.out" => FactorFileKind::GeneSets,
-                "f.out" => FactorFileKind::Labels,
+                "f.out" => FactorFileKind::Phenos,
                 _ => return None,
             };
             Some(FileInfo {

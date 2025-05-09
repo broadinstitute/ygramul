@@ -7,4 +7,4 @@ LOAD CSV WITH HEADERS FROM 'file:///pheno_geneset.csv' AS row MERGE (t:Trait { i
 LOAD CSV WITH HEADERS FROM 'file:///pheno_geneset.csv' AS row CALL(row) { MERGE (t:Trait { id:row.pheno}) MERGE (gs:GeneSet {id: row.gene_set } ) MERGE (t)-[e:TRAIT_GENE_SET]->(gs) SET e.beta_uncorrected = toFloat(row.beta_uncorrected) SET e.beta = toFloat(row.beta) } IN TRANSACTIONS OF 200 ROWS;
 LOAD CSV WITH HEADERS FROM 'file:///factor_gene.csv' AS row CALL(row) { MERGE (f:Factor { id:row.factor }) MERGE (g:Gene {id: row.gene } ) MERGE (f)-[e:FACTOR_GENE]->(g) SET e.weight = toFloat(row.weight) } IN TRANSACTIONS OF 200 ROWS;
 LOAD CSV WITH HEADERS FROM 'file:///phenotype_names.csv' AS row MERGE (t:Trait { id:row.phenotype }) SET t.label = row.phenotype_name;
-LOAD CSV WITH HEADERS FROM 'file:///factor_labels.csv' AS row CALL(row) { MERGE (f:Factor { id:row.factor }) SET f.label = row.label } IN TRANSACTIONS OF 200 ROWS;
+LOAD CSV WITH HEADERS FROM 'file:///factor_phenos.csv' AS row CALL(row) { MERGE (f:Factor { id:row.factor }) MERGE (t:Trait { id:row.pheno }) MERGE (t)-[e:TRAIT_FACTOR]->(t) SET f.label = row.label SET e.weight = row.any_relevance } IN TRANSACTIONS OF 200 ROWS;

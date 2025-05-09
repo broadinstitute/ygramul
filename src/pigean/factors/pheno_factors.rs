@@ -7,9 +7,10 @@ use crate::s3;
 use crate::s3::FilePath;
 use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
 
-struct FactorLabel {
+struct PhenoFactor {
     factor: Factor,
     label: String,
+    any_relevance: f64
 }
 
 struct FactorLabelsFile<W: Write> {
@@ -18,12 +19,13 @@ struct FactorLabelsFile<W: Write> {
 
 impl<W: Write> FactorLabelsFile<W> {
     pub(crate) fn new(mut writer: W) -> Result<Self, Error> {
-        writeln!(writer, "factor,label")?;
+        writeln!(writer, "factor,label,pheno,any_relevance")?;
         Ok(FactorLabelsFile { writer })
     }
 
-    fn write_factor_label(&mut self, item: FactorLabel) -> Result<(), Error> {
-        writeln!(self.writer, "{},{}", item.factor, item.label)?;
+    fn write_factor_label(&mut self, pheno_factor: PhenoFactor) -> Result<(), Error> {
+        writeln!(self.writer, "{},{},{},{}", pheno_factor.factor, pheno_factor.label,
+                 pheno_factor.factor.pheno, pheno_factor.any_relevance)?;
         Ok(())
     }
 }
@@ -32,6 +34,7 @@ struct FactorLabelTsvEater {
     pheno: String,
     prefix: Option<String>,
     label: Option<String>,
+    any_relevance: f64,
 }
 
 impl FactorLabelTsvEater {
@@ -40,12 +43,13 @@ impl FactorLabelTsvEater {
             pheno,
             prefix: None,
             label: None,
+            any_relevance: f64::NAN,
         }
     }
 }
 
 impl TsvEater for FactorLabelTsvEater {
-    type Row = FactorLabel;
+    type Row = PhenoFactor;
 
     fn field(&mut self, name: &str, value: &str) -> Result<(), Error> {
         match name {
@@ -57,11 +61,13 @@ impl TsvEater for FactorLabelTsvEater {
     }
 
     fn finish(self) -> Result<Self::Row, Error> {
-        let FactorLabelTsvEater { pheno, prefix, label} = self;
+        let FactorLabelTsvEater {
+            pheno, prefix, label, any_relevance
+        } = self;
         let prefix = prefix.ok_or_else(|| Error::from("Missing factor prefix"))?;
         let label = label.ok_or_else(|| Error::from("Missing factor label"))?;
         let factor = Factor::new(prefix, pheno);
-        Ok(FactorLabel { factor, label })
+        Ok(PhenoFactor { factor, label, any_relevance })
     }
 }
 
@@ -70,7 +76,7 @@ struct FactorLabelsTsvEaterMaker {
 }
 
 impl TsvEaterMaker for FactorLabelsTsvEaterMaker {
-    type Row = FactorLabel;
+    type Row = PhenoFactor;
     type Eater = FactorLabelTsvEater;
 
     fn make(&self) -> Self::Eater {
