@@ -55,6 +55,7 @@ impl TsvEater for FactorLabelTsvEater {
         match name {
             "Factor" => self.prefix = Some(value.to_string()),
             "label" => self.label = Some(value.to_string()),
+            "any_relevance" => self.any_relevance = value.parse().unwrap_or(f64::NAN),
             _ => {}
         }
         Ok(())
