@@ -1,0 +1,20 @@
+MATCH (t1:Trait { id:"T2D" })-[:TRAIT_FACTOR]->(f1:Factor)
+MATCH (t2:Trait { id:"AD" })-[:TRAIT_FACTOR]->(f2:Factor)
+CALL(f1, f2) {
+    MATCH (f1)-[:FACTOR_GENE]->(g:Gene)<-[:FACTOR_GENE]-(f2)
+    RETURN count(DISTINCT g) as n_g_intersect
+}
+CALL(f1, f2) {
+    CALL(f1, f2) {
+        MATCH (f1)-[:FACTOR_GENE]->(g)
+        RETURN DISTINCT g
+        UNION
+        MATCH (f2)-[:FACTOR_GENE]->(g)
+        RETURN DISTINCT g
+    }
+    RETURN count(DISTINCT g) as n_g_union
+}
+WITH *, toFloat(n_g_intersect) / toFloat(n_g_union) as overlap
+RETURN n_g_intersect, n_g_union, overlap, f1.id, f1.label, f2.id, f2.label
+ORDER BY overlap DESC
+LIMIT 100
