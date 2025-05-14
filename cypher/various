@@ -6,6 +6,12 @@ RETURN t.id, t.label, e.prior, e.combined, g.id
 MATCH (t:Trait { id:"T2D" })-[e:TRAIT_GENE_SET]->(gs:GeneSet)
 RETURN t.id, t.label, e.beta, e.beta_uncorrected, gs.id
 
+// Genes related to T2D and Alzheimer's Disease
+MATCH (t1:Trait { id: "T2D" })-[e1:TRAIT_GENE]->(g:Gene)<-[e2:TRAIT_GENE]-(t2:Trait { id: "AD" })
+RETURN t1.id, t1.label, t2.id, t2.label, g.id, e1.prior, e2.prior
+ORDER BY e1.prior + e2.prior DESC
+LIMIT 100
+
 // Factors for given trait
 MATCH (t:Trait { id:"T2D" })-[e:TRAIT_FACTOR]->(f:Factor)
 RETURN t.id, t.label, e.weight, f.id, f.label
