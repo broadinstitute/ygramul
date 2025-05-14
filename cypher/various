@@ -1,0 +1,104 @@
+// Genes for given trait
+MATCH (t:Trait { id:"T2D" })-[e:TRAIT_GENE]->(g:Gene)
+RETURN t.id, t.label, e.prior, e.combined, g.id
+
+// Gene sets for given trait
+MATCH (t:Trait { id:"T2D" })-[e:TRAIT_GENE_SET]->(gs:GeneSet)
+RETURN t.id, t.label, e.beta, e.beta_uncorrected, gs.id
+
+// Factors for given trait
+MATCH (t:Trait { id:"T2D" })-[e:TRAIT_FACTOR]->(f:Factor)
+RETURN t.id, t.label, e.weight, f.id, f.label
+ORDER BY e.weight DESC
+
+// Factors for given gene
+MATCH (f:Factor)-[e:FACTOR_GENE]->(g:Gene { id: "FADS1" })
+RETURN f.id, f.label, e.weight, g.id
+
+// Factors for given gene set
+MATCH (f:Factor)-[e:FACTOR_GENE_SET]->(gs:GeneSet { id: "GOBP_INTERMEMBRANE_LIPID_TRANSFER" })
+RETURN f.id, f.label, e.weight, gs.id
+
+// Connecting factors for T2D to correlated factors for Alzheimer's Disease, based on genes, unweighted
+MATCH (t1:Trait { id:"T2D" })-[:TRAIT_FACTOR]->(f1:Factor)
+MATCH (t2:Trait { id:"AD" })-[:TRAIT_FACTOR]->(f2:Factor)
+CALL(f1, f2) {
+    MATCH (f1)-[:FACTOR_GENE]->(g:Gene)<-[:FACTOR_GENE]-(f2)
+    RETURN count(DISTINCT g) as n_g_intersect
+}
+CALL(f1, f2) {
+    CALL(f1, f2) {
+        MATCH (f1)-[:FACTOR_GENE]->(g)
+        RETURN DISTINCT g
+        UNION
+        MATCH (f2)-[:FACTOR_GENE]->(g)
+        RETURN DISTINCT g
+    }
+    RETURN count(DISTINCT g) as n_g_union
+}
+WITH *, toFloat(n_g_intersect) / toFloat(n_g_union) as overlap
+RETURN n_g_intersect, n_g_union, overlap, f1.id, f1.label, f2.id, f2.label
+ORDER BY overlap DESC
+LIMIT 100
+
+// Connecting factors for T2D to correlated factors for Alzheimer's Disease, based on gene sets, unweighted
+MATCH (t1:Trait { id:"T2D" })-[:TRAIT_FACTOR]->(f1:Factor)
+MATCH (t2:Trait { id:"AD" })-[:TRAIT_FACTOR]->(f2:Factor)
+CALL(f1, f2) {
+    MATCH (f1)-[:FACTOR_GENE_SET]->(gs:GeneSet)<-[:FACTOR_GENE_SET]-(f2)
+    RETURN count(DISTINCT gs) as n_gs_intersect
+}
+CALL(f1, f2) {
+    CALL(f1, f2) {
+        MATCH (f1)-[:FACTOR_GENE_SET]->(gs)
+        RETURN DISTINCT gs
+        UNION
+        MATCH (f2)-[:FACTOR_GENE_SET]->(gs)
+        RETURN DISTINCT gs
+    }
+    RETURN count(DISTINCT gs) as n_gs_union
+}
+WITH *, toFloat(n_gs_intersect) / toFloat(n_gs_union) as overlap
+RETURN n_gs_intersect, n_gs_union, overlap, f1.id, f1.label, f2.id, f2.label
+ORDER BY overlap DESC
+LIMIT 100
+
+// Connecting factors for T2D to correlated factors for Alzheimer's Disease, based on genes, weighted
+MATCH (t1:Trait { id:"T2D" })-[:TRAIT_FACTOR]->(f1:Factor)
+MATCH (t2:Trait { id:"AD" })-[:TRAIT_FACTOR]->(f2:Factor)
+CALL(f1, f2) {
+    MATCH (f1)-[e1:FACTOR_GENE]->(g:Gene)<-[e2:FACTOR_GENE]-(f2)
+    RETURN sum(e1.weight) as sum_t1_intersect, sum(e2.weight) as sum_t2_intersect
+}
+CALL(f1) {
+    MATCH (f1)-[e1:FACTOR_GENE]->(g)
+    RETURN sum(e1.weight) as sum_t1_union
+}
+CALL(f2) {
+    MATCH (f2)-[e2:FACTOR_GENE]->(g)
+    RETURN sum(e2.weight) as sum_t2_union
+}
+WITH *, (sum_t1_intersect * sum_t2_intersect) / ( sum_t1_union * sum_t2_union) as overlap
+RETURN sum_t1_intersect, sum_t2_intersect, sum_t1_union, sum_t2_union, overlap, f1.id, f1.label, f2.id, f2.label
+ORDER BY overlap DESC
+LIMIT 100
+
+// Connecting factors for T2D to correlated factors for Alzheimer's Disease, based on genes, weighted
+MATCH (t1:Trait { id:"T2D" })-[:TRAIT_FACTOR]->(f1:Factor)
+MATCH (t2:Trait { id:"AD" })-[:TRAIT_FACTOR]->(f2:Factor)
+CALL(f1, f2) {
+    MATCH (f1)-[e1:FACTOR_GENE]->(g:Gene)<-[e2:FACTOR_GENE]-(f2)
+    RETURN sum(e1.weight) as sum_t1_intersect, sum(e2.weight) as sum_t2_intersect
+}
+CALL(f1) {
+    MATCH (f1)-[e1:FACTOR_GENE]->(g)
+    RETURN sum(e1.weight) as sum_t1_union
+}
+CALL(f2) {
+    MATCH (f2)-[e2:FACTOR_GENE]->(g)
+    RETURN sum(e2.weight) as sum_t2_union
+}
+WITH *, (sum_t1_intersect * sum_t2_intersect) / ( sum_t1_union * sum_t2_union) as overlap
+RETURN sum_t1_intersect, sum_t2_intersect, sum_t1_union, sum_t2_union, overlap, f1.id, f1.label, f2.id, f2.label
+ORDER BY overlap DESC
+LIMIT 100
