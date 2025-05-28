@@ -28,6 +28,8 @@ pub fn execute(config: &ActionConfig) -> Result<(), Error> {
         ActionConfig::Ls(config) => s3::ls(config)?,
         ActionConfig::Bulk(config) => pigean::phenos::create_bulk_files(config)?,
         ActionConfig::Factors(config) => pigean::factors::create_bulk_files(config)?,
+        ActionConfig::TraitGeneSets(config) =>
+            pigean::pgs::create_bulk_files(config)?,
     }
     Ok(())
 }

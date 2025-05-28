@@ -1,5 +1,6 @@
 pub(crate) mod phenos;
 pub(crate) mod factors;
+pub(crate) mod pgs;
 
 use crate::error::Error;
 fn last_three_parts(string: &str) -> Option<(&str, &str, &str)> {

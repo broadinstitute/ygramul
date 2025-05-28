@@ -70,6 +70,7 @@ pub enum ActionConfig {
     Ls(String),
     Bulk(PigeanConfig),
     Factors(PigeanConfig),
+    TraitGeneSets(PigeanConfig),
 }
 pub struct LocalConfig {
     pub(crate) data_dir: PathBuf,
