@@ -1,4 +1,5 @@
 mod pheno_pgs;
+mod gene_pgs;
 
 use std::fmt::{Display, Formatter};
 use std::path::Path;

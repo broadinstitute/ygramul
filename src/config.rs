@@ -16,10 +16,11 @@ pub enum Action {
     Cat,
     Ls,
     Bulk,
-    Factors
+    Factors,
+    TraitGeneSets,
 }
 
-pub const ACTIONS: [Action; 9] = [
+pub const ACTIONS: [Action; 10] = [
     Action::Hello,
     Action::Survey,
     Action::Ping,
@@ -28,7 +29,8 @@ pub const ACTIONS: [Action; 9] = [
     Action::Cat,
     Action::Ls,
     Action::Bulk,
-    Action::Factors
+    Action::Factors,
+    Action::TraitGeneSets,
 ];
 
 pub(crate) mod action {
@@ -41,6 +43,7 @@ pub(crate) mod action {
     pub(crate) const LS: &str = "ls";
     pub(crate) const BULK: &str = "bulk";
     pub(crate) const FACTORS: &str = "factors";
+    pub(crate) const PGS: &str = "pgs";
 }
 
 mod about {
@@ -53,6 +56,7 @@ mod about {
     pub(crate) const LS: &str = "Lists the content of a directory.";
     pub(crate) const BULK: &str = "Creates pheno/genes/gene sets bulk files for PIGEAN.";
     pub(crate) const FACTORS: &str = "Creates factors/genes/gene sets bulk files for PIGEAN.";
+    pub(crate) const PGS: &str = "Creates trait-gene sets bulk files for PIGEAN.";
 }
 
 pub struct Neo4jConfig {
@@ -269,6 +273,15 @@ impl ConfigBuilder {
                 let pigean = pigean.build(out)?;
                 Ok(ActionConfig::Factors(pigean))
             }
+            Action::TraitGeneSets => {
+                let ConfigBuilder { pigean, out, .. } = self;
+                let pigean =
+                    pigean.ok_or_else(|| Error::from("No PIGEAN configuration specified."))?;
+                let out =
+                    out.ok_or_else(|| Error::from("No output directory specified."))?;
+                let pigean = pigean.build(out)?;
+                Ok(ActionConfig::TraitGeneSets(pigean))
+            }
         }
     }
 }
@@ -285,6 +298,7 @@ impl Display for Action {
             Action::Ls => write!(f, "{}", action::LS),
             Action::Bulk => write!(f, "{}", action::BULK),
             Action::Factors => write!(f, "{}", action::FACTORS),
+            Action::TraitGeneSets => write!(f, "{}", action::PGS),
         }
     }
 }
@@ -301,6 +315,7 @@ impl Action {
             Action::Ls => action::LS,
             Action::Bulk => action::BULK,
             Action::Factors => action::FACTORS,
+            Action::TraitGeneSets => action::PGS,
         }
     }
     pub fn about(&self) -> &'static str {
@@ -314,6 +329,7 @@ impl Action {
             Action::Ls => about::LS,
             Action::Bulk => about::BULK,
             Action::Factors => about::FACTORS,
+            Action::TraitGeneSets => about::PGS,
         }
     }
 }
