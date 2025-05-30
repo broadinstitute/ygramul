@@ -50,7 +50,7 @@ pub fn create_bulk_files(config: &PigeanConfig) -> Result<(), pigean::Error> {
     info!("Writing pheno-geneset file to {}", pheno_pgs_file.display());
     pheno_pgs::add_files(&pheno_pgs_files, &pheno_pgs_file)?;
 
-    let gene_pgs_file = Path::new(&config.out).join("pheno_geneset.csv");
+    let gene_pgs_file = Path::new(&config.out).join("gene_geneset.csv");
     info!("Writing pheno-geneset file to {}", pheno_pgs_file.display());
     gene_pgs::add_files(&gene_pgs_files, &gene_pgs_file)?;
 

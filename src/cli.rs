@@ -76,7 +76,7 @@ fn new_arg(name: &'static str, short: char, help: &'static str) -> Arg {
     Arg::new(name).short(short).help(help)
 }
 fn known_subcommands() -> String {
-    format!("Known subcommands are '{}'.", config::all_actions_list())
+    format!("Known subcommands are: {}.", config::all_actions_list())
 }
 
 fn add_subcommands(command: Command) -> Command {
