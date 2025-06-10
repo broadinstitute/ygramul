@@ -1,0 +1,22 @@
+// Initialize source indices
+MATCH (n) SET n.i_source = toInteger( rand() * 1024 );
+
+// Initialize sink indices
+MATCH (n) SET n.i_sink = toInteger( rand() * 1024 );
+
+// Ensure that source and sink indices are different
+MATCH (n) WHERE n.i_source = n.i_sink SET n.i_sink = toInteger( rand() * 1024 );
+
+// Initialize embeddings
+MATCH (n)
+CALL {
+    WITH n
+    SET n.vector =
+        [i IN range(0, 1023) |
+           CASE
+             WHEN i = n.i_source  THEN  1.0
+             WHEN i = n.i_sink THEN -1.0
+             ELSE 0.0
+           END
+        ]
+} IN TRANSACTIONS;
