@@ -20,3 +20,33 @@ CALL {
            END
         ]
 } IN TRANSACTIONS;
+
+// Iterate embeddings
+:auto                       // needed only in Neo4j Browser
+MATCH (n)                   // choose the nodes you want to update
+CALL {
+  WITH n
+  UNWIND range(0,1023) AS i               // 1 row per index
+  WITH n, i,
+       CASE
+         WHEN i = n.i_source THEN  1.0
+         WHEN i = n.i_sink   THEN -1.0
+         ELSE null
+       END AS fixed
+  OPTIONAL MATCH (n)-[e]-(m)
+  WHERE fixed IS NULL                    // only if we still need a value
+    AND e.weight IS NOT NULL
+    AND m.vector IS NOT NULL
+  WITH n, i, fixed,
+       sum(e.weight * m.vector[i]) AS num,
+       sum(e.weight)                AS den
+  WITH n, i,
+       CASE
+         WHEN fixed IS NOT NULL THEN fixed
+         WHEN den   = 0          THEN 0.0     // no weighted info → 0
+         ELSE num / den
+       END AS value
+  ORDER BY i
+  WITH n, collect(value) AS vec
+  SET n.vector_new = vec
+} IN TRANSACTIONS;
