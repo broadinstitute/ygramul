@@ -37,7 +37,7 @@ impl FileInfo {
 }
 
 fn unrecognized_path<P: Display>(path: &P) -> Error {
-    Error::from(format!("Unrecognized file: '{}'.", path))
+    Error::from(format!("Unrecognized file: '{path}'."))
 }
 
 impl FromStr for FileInfo {
@@ -164,9 +164,9 @@ impl Display for FileGroup {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut kinds = self.kinds.iter();
         if let Some(kind) = kinds.next() {
-            write!(f, "{}", kind)?;
+            write!(f, "{kind}")?;
             for kind in kinds {
-                write!(f, ", {}", kind)?;
+                write!(f, ", {kind}")?;
             }
         }
         write!(f, " ({} files)", self.kinds.len())?;

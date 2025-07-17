@@ -17,7 +17,7 @@ impl WipeRowEater {
 impl RowEater for WipeRowEater {
     type Summary = ();
     fn eat(&mut self, row: neo4rs::Row) -> Result<(), Error> {
-        info!("{:?}", row);
+        info!("{row:?}");
         Ok(())
     }
     fn finish(&mut self) -> Result<(), Error> {
@@ -34,10 +34,10 @@ pub(crate) fn wipe(config: &ClientConfig) -> Result<(), Error> {
         let query_base = query("MATCH (n) LIMIT $n_nodes DETACH DELETE n");
         let query = query_base.param("n_nodes", n_nodes);
         let mut row_eater = WipeRowEater::new();
-        info!("Wiping {} nodes", n_nodes);
+        info!("Wiping {n_nodes} nodes");
         match neo.cypher(query, &mut row_eater) {
             Ok(_) => {
-                info!("Wiped {} nodes", n_nodes);
+                info!("Wiped {n_nodes} nodes");
                 n_retries = 0;
                 n_nodes += 1 + n_nodes / 10;
                 if n_nodes > i64::MAX / 10 {
@@ -45,7 +45,7 @@ pub(crate) fn wipe(config: &ClientConfig) -> Result<(), Error> {
                 }
             }
             Err(_) => {
-                error!("Failed to wipe {} nodes", n_nodes);
+                error!("Failed to wipe {n_nodes} nodes");
                 n_nodes -= 1 + n_nodes / 10;
                 if n_nodes < 1 {
                     n_nodes = 1;

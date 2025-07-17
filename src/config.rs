@@ -364,7 +364,7 @@ impl TryFrom<&str> for Action {
             action::BULK => Ok(Action::Bulk),
             action::FACTORS => Ok(Action::Factors),
             action::PGS => Ok(Action::TraitGeneSets),
-            _ => Err(Error::from(format!("Unknown action: {}", value))),
+            _ => Err(Error::from(format!("Unknown action: {value }"))),
         }
     }
 }

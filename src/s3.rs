@@ -36,7 +36,7 @@ struct LinePrinter {}
 
 impl LineConsumer for LinePrinter {
     fn consume(&mut self, line: String) -> Result<(), Error> {
-        println!("{}", line);
+        println!("{line}");
         Ok(())
     }
 }
@@ -55,7 +55,7 @@ impl FileCollector {
         let prefix = if prefix.ends_with('/') {
             prefix
         } else {
-            format!("{}/", prefix)
+            format!("{prefix}/")
         };
         FileCollector {
             prefix,

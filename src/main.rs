@@ -15,7 +15,7 @@ fn main() {
     ).unwrap();
     match run() {
         Ok(_) => { info!("Done!") }
-        Err(error) => { error!("Error: {}", error)}
+        Err(error) => { error!("Error: {error}")}
     }
 }
 

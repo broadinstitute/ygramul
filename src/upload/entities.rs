@@ -62,7 +62,7 @@ impl TsvEater for EntityUploadEater {
             weights,
         } = self;
         let entity =
-            pheno.ok_or_else(|| Error::from(format!("Missing {}", entity_class)))?;
+            pheno.ok_or_else(|| Error::from(format!("Missing {entity_class}")))?;
         let weight_max = weights.iter().cloned().fold(0.0, f64::max);
         Ok(EntityRow {
             entity,

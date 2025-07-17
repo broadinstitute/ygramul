@@ -51,7 +51,7 @@ impl Display for Error {
         write!(f, "{}", self.message)?;
         let mut source = self.source();
         while let Some(e) = source {
-            write!(f, ": {}", e)?;
+            write!(f, ": {e}")?;
             source = e.source();
         }
         Ok(())

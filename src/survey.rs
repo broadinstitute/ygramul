@@ -25,7 +25,7 @@ pub(crate) fn survey(config: &LocalConfig) -> Result<FileInfos, Error>{
         if path.is_file() {
             match FileInfo::from_path(&path) {
                 Err(error) => {
-                    warn!("{}", error);
+                    warn!("{error}");
                     n_unrecognized += 1;
                 }
                 Ok(file_info) => {
@@ -35,9 +35,9 @@ pub(crate) fn survey(config: &LocalConfig) -> Result<FileInfos, Error>{
         }
     }
     if n_unrecognized > 0 {
-        warn!("{} files were not recognized and will be ignored.", n_unrecognized);
+        warn!("{n_unrecognized} files were not recognized and will be ignored.");
     }
-    info!("{}", file_infos);
+    info!("{file_infos}");
     Ok(file_infos)
 }
 
