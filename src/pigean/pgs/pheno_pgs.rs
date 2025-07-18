@@ -9,6 +9,7 @@ use std::path::Path;
 
 pub(crate) struct PhenoPgs {
     pub(crate) pgs: PhenoGeneSet,
+    pub(crate) label: String,
     pub(crate) beta_uncorrected: f64,
     pub(crate) beta: f64,
 }
@@ -19,7 +20,7 @@ pub(crate) struct PhenoPgsFile<W: Write> {
 
 impl<W: Write> PhenoPgsFile<W> {
     pub(crate) fn new(mut writer: W) -> Result<Self, Error> {
-        writeln!(writer, "pheno,pgs,beta_uncorrected,beta")?;
+        writeln!(writer, "pheno,pgs,source,beta_uncorrected,beta")?;
         Ok(PhenoPgsFile { writer })
     }
 
@@ -29,8 +30,8 @@ impl<W: Write> PhenoPgsFile<W> {
         if item.beta > min_beta {
             writeln!(
                 self.writer,
-                "{},{},{},{}",
-                pheno, item.pgs, item.beta_uncorrected, item.beta
+                "{},{},{},{},{}",
+                pheno, item.pgs, item.label, item.beta_uncorrected, item.beta
             )?;
         }
         Ok(())
@@ -40,6 +41,7 @@ impl<W: Write> PhenoPgsFile<W> {
 pub(crate) struct PhenosPgsTsvEater {
     pheno: String,
     gene_set: Option<String>,
+    label: Option<String>,
     beta_uncorrected: f64,
     beta: f64,
 }
@@ -49,6 +51,7 @@ impl PhenosPgsTsvEater {
         PhenosPgsTsvEater {
             pheno,
             gene_set: None,
+            label: None,
             beta_uncorrected: f64::NAN,
             beta: f64::NAN,
         }
@@ -61,6 +64,7 @@ impl TsvEater for PhenosPgsTsvEater {
     fn field(&mut self, name: &str, value: &str) -> Result<(), Error> {
         match name {
             "Gene_Set" => self.gene_set = Some(value.to_string()),
+            "label" => self.label = Some(value.to_string()),
             "beta_uncorrected" => self.beta_uncorrected = value.parse().unwrap_or(f64::NAN),
             "beta" => self.beta = value.parse().unwrap_or(f64::NAN),
             _ => {}
@@ -70,11 +74,12 @@ impl TsvEater for PhenosPgsTsvEater {
 
     fn finish(self) -> Result<Self::Row, Error> {
         let PhenosPgsTsvEater {
-            pheno, gene_set, beta_uncorrected, beta,
+            pheno, gene_set, label, beta_uncorrected, beta,
         } = self;
         let gene_set = gene_set.ok_or_else(|| Error::from("Missing gene set"))?;
+        let label = label.ok_or_else(|| Error::from("Missing label"))?;
         let pgs = PhenoGeneSet::new(pheno, gene_set);
-        Ok(PhenoPgs { pgs, beta_uncorrected, beta })
+        Ok(PhenoPgs { pgs, label, beta_uncorrected, beta })
     }
 }
 
