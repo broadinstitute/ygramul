@@ -1,36 +1,26 @@
-use std::fs::File;
 use crate::error::Error;
 use crate::pigean::pgs::{FileInfo, PhenoGeneSet};
-use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
-use std::io::Write;
-use std::path::Path;
 use crate::s3;
 use crate::s3::FilePath;
+use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
+use serde::Serialize;
+use std::io::Write;
+use std::path::Path;
 
+#[derive(Serialize)]
 pub(crate) struct GenePgs {
     pub gene: String,
-    pub pgs: PhenoGeneSet,
+    pub pgs: String,
     pub beta: f64,
 }
 
-pub(crate) struct GenePgsFile<W: Write> {
-    writer: W,
-}
-
-impl<W: Write> GenePgsFile<W> {
-    pub(crate) fn new(mut writer: W) -> Result<Self, Error> {
-        writeln!(writer, "gene,pgs,beta")?;
-        Ok(GenePgsFile { writer })
+pub(crate) fn write_gene_pgs<W: Write>(
+    writer: &mut csv::Writer<W>, item: GenePgs, min_beta: f64,
+) -> Result<(), Error> {
+    if item.beta > min_beta {
+        writer.serialize(item)?;
     }
-
-    pub(crate) fn write_gene_pgs(
-        &mut self, item: GenePgs, min_beta: f64,
-    ) -> Result<(), Error> {
-        if item.beta > min_beta {
-            writeln!(self.writer, "{},{},{}", item.gene, item.pgs, item.beta)?;
-        }
-        Ok(())
-    }
+    Ok(())
 }
 
 pub(crate) struct GenePgsTsvEater {
@@ -70,7 +60,7 @@ impl TsvEater for GenePgsTsvEater {
         } = self;
         let gene = gene.ok_or_else(|| Error::from("Missing gene"))?;
         let gene_set = gene_set.ok_or_else(|| Error::from("Missing gene set"))?;
-        let pgs = PhenoGeneSet::new(pheno, gene_set);
+        let pgs = PhenoGeneSet::new(pheno, gene_set).to_string();
         Ok(GenePgs { gene, pgs, beta })
     }
 }
@@ -94,11 +84,11 @@ impl TsvEaterMaker for GenePgsTsvEaterMaker {
     }
 }
 
-fn add_file<W: Write>(file: &FileInfo, writer: &mut GenePgsFile<W>) -> Result<(), Error> {
+fn add_file<W: Write>(file: &FileInfo, writer: &mut csv::Writer<W>) -> Result<(), Error> {
     let tsv_eater_maker = GenePgsTsvEaterMaker::new(file.pheno.clone());
     let mut tsv_consumer =
         TsvConsumer::new('\t', tsv_eater_maker, |item| {
-            writer.write_gene_pgs(item, 0.01)
+            write_gene_pgs(writer, item, 0.01)
         });
     let file_path = FilePath::from_path(&file.path)
         .map_err(|e| Error::wrap(format!("Could not use {} as path", file.path), e))?;
@@ -108,7 +98,7 @@ fn add_file<W: Write>(file: &FileInfo, writer: &mut GenePgsFile<W>) -> Result<()
 }
 
 pub(crate) fn add_files(files: &[FileInfo], out_file: &Path) -> Result<(), Error> {
-    let mut writer = GenePgsFile::new(File::create(out_file)?)?;
+    let mut writer = csv::Writer::from_path(out_file)?;
     for file in files {
         add_file(file, &mut writer)?;
     }
