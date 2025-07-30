@@ -15,6 +15,7 @@ mod errors {
     pub(crate) const GET_OBJECT_ERROR: &str = "Get object error";
     pub(crate) const LIST_OBJECTS_V2_ERROR: &str = "List objects v2 error";
     pub(crate) const BYTE_STREAM_ERROR: &str = "Byte stream error";
+    pub(crate) const CSV_ERROR: &str = "CSV error";
 }
 pub struct Error {
     message: String,
@@ -123,5 +124,11 @@ impl From<SdkError<ListObjectsV2Error>> for Error {
 impl From<ByteStreamError> for Error {
     fn from(error: ByteStreamError) -> Self {
         Error::new(errors::BYTE_STREAM_ERROR.to_string(), Some(Box::new(error)))
+    }
+}
+
+impl From<csv::Error> for Error {
+    fn from(error: csv::Error) -> Self {
+        Error::new(errors::CSV_ERROR.to_string(), Some(Box::new(error)))
     }
 }

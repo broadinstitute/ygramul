@@ -3,42 +3,34 @@ use std::io::Write;
 use crate::error::Error;
 use crate::pigean::factors::{Factor, FileInfo};
 use std::path::Path;
+use serde::Serialize;
 use crate::s3;
 use crate::s3::FilePath;
 use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
 
+#[derive(Serialize)]
 struct GeneSetFactor {
-    factor: Factor,
+    factor: String,
     gene_set: String,
     weight: f64,
 }
 
-struct GeneSetFactorsFile<W: Write> {
-    writer: W,
+fn write_gene_set_factor<W: Write>(writer: &mut csv::Writer<W>, item: GeneSetFactor)
+                                   -> Result<(), Error> {
+    writer.serialize(item)?;
+    Ok(())
 }
-
-impl<W: Write> GeneSetFactorsFile<W> {
-    pub(crate) fn new(mut writer: W) -> Result<Self, Error> {
-        writeln!(writer, "factor,gene_set,weight")?;
-        Ok(GeneSetFactorsFile { writer })
-    }
-
-    fn write_gene_set_factor(&mut self, item: GeneSetFactor) -> Result<(), Error> {
-        writeln!(self.writer, "{},{},{}", item.factor, item.gene_set, item.weight)?;
-        Ok(())
-    }
-    fn write_set_gene_factors(
-        &mut self,
-        gene_factors: Vec<GeneSetFactor>,
-        min_weight: f64
-    ) -> Result<(), Error> {
-        for gene_factor in gene_factors.into_iter() {
-            if gene_factor.weight > min_weight {
-                self.write_gene_set_factor(gene_factor)?
-            }
+fn write_set_gene_factors<W: Write>(
+    writer: &mut csv::Writer<W>,
+    gene_factors: Vec<GeneSetFactor>,
+    min_weight: f64
+) -> Result<(), Error> {
+    for gene_factor in gene_factors.into_iter() {
+        if gene_factor.weight > min_weight {
+            write_gene_set_factor(writer, gene_factor)?
         }
-        Ok(())
     }
+    Ok(())
 }
 
 struct FactorWeight {
@@ -85,7 +77,7 @@ impl TsvEater for GeneFactorsTsvEater {
         let gene_set = self.gene_set.ok_or(Error::from("No gene set specified"))?;
         let gene_factors = self.factor_weights.into_iter().map(|fw| {
             let FactorWeight { prefix, weight } = fw;
-            let factor = Factor::new(prefix, self.pheno.clone());
+            let factor = Factor::new(prefix, self.pheno.clone()).to_string();
             GeneSetFactor { factor, gene_set: gene_set.clone(), weight }
         }).collect();
         Ok(gene_factors)
@@ -106,12 +98,12 @@ impl TsvEaterMaker for GeneFactorsTsvEaterMaker {
 
 fn add_file<W: Write>(
     file: &FileInfo,
-    writer: &mut GeneSetFactorsFile<W>,
+    writer: &mut csv::Writer<W>,
 ) -> Result<(), Error> {
     let tsv_eater_maker = GeneFactorsTsvEaterMaker { pheno: file.pheno.clone() };
     let mut tsv_consumer =
         TsvConsumer::new('\t', tsv_eater_maker, |gene_factors| {
-            writer.write_set_gene_factors(gene_factors, 0.01)
+            write_set_gene_factors(writer, gene_factors, 0.01)
         });
     let file_path = FilePath::from_path(&file.path)?;
     s3::process_file(&file_path, &mut tsv_consumer)
@@ -119,7 +111,8 @@ fn add_file<W: Write>(
     Ok(())
 }
 pub(crate) fn add_files(files: &[FileInfo], out_file: &Path) -> Result<(), Error> {
-    let mut writer = GeneSetFactorsFile::new(File::create(out_file)?)?;
+    let mut writer =
+        csv::WriterBuilder::new().delimiter(b',').from_writer(File::create(out_file)?);
     for file in files {
         add_file(file, &mut writer)?;
     }
