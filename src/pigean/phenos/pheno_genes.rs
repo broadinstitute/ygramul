@@ -3,7 +3,7 @@ use crate::pigean::phenos::FileInfo;
 use crate::s3;
 use crate::s3::FilePath;
 use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
-use std::fs::File;
+use serde::Serialize;
 use std::io::Write;
 use std::path::Path;
 
@@ -14,24 +14,34 @@ pub(crate) struct PhenoGene {
     pub(crate) prior: f64,
 }
 
-struct PhenosGenesFile<W: Write> {
-    writer: W,
+impl PhenoGene {
+    fn into_row(self, pheno: &str) -> PhenoGeneRow {
+        PhenoGeneRow {
+            pheno: pheno.to_string(),
+            gene: self.gene,
+            combined: self.combined,
+            log_bf: self.log_bf,
+            prior: self.prior,
+        }
+    }
 }
 
-impl<W: Write> PhenosGenesFile<W> {
-    pub(crate) fn new(mut writer: W) -> Result<Self, Error> {
-        writeln!(writer, "pheno,gene,combined,log_bf,prior")?;
-        Ok(PhenosGenesFile { writer })
-    }
-    fn write_pheno_gene(&mut self, pheno: &str, item: PhenoGene) -> Result<(), Error> {
-        writeln!(
-            self.writer,
-            "{},{},{},{},{}",
-            pheno, item.gene, item.combined, item.log_bf, item.prior
-        )?;
-        Ok(())
-    }
+#[derive(Serialize)]
+struct PhenoGeneRow {
+    pub(crate) pheno: String,
+    pub(crate) gene: String,
+    pub(crate) combined: f64,
+    pub(crate) log_bf: f64,
+    pub(crate) prior: f64,
 }
+
+fn write_pheno_gene<W: Write>(writer: &mut csv::Writer<W>, pheno: &str, item: PhenoGene)
+    -> Result<(), Error> {
+    let row = item.into_row(pheno);
+    writer.serialize(row)?;
+    Ok(())
+}
+
 
 struct PhenosGenesTsvEater {
     gene: Option<String>,
@@ -91,12 +101,12 @@ impl TsvEaterMaker for PhenosGenesTsvEaterMaker {
 }
 fn add_file<W: Write>(
     file: &FileInfo,
-    writer: &mut PhenosGenesFile<W>,
+    writer: &mut csv::Writer<W>,
 ) -> Result<(), Error> {
     let mut tsv_consumer = 
         TsvConsumer::new('\t', PhenosGenesTsvEaterMaker {}, |pheno_gene| {
         if pheno_gene.combined > 1.0 {
-            writer.write_pheno_gene(&file.pheno, pheno_gene)
+            write_pheno_gene(writer, &file.pheno, pheno_gene)
         } else {
             Ok(())
         }
@@ -108,7 +118,7 @@ fn add_file<W: Write>(
 }
 
 pub(crate) fn add_files(files: &[FileInfo], out_file: &Path) -> Result<(), Error> {
-    let mut writer = PhenosGenesFile::new(File::create(out_file)?)?;
+    let mut writer = csv::Writer::from_path(out_file)?;
     for file in files {
         add_file(file, &mut writer)?;
     }

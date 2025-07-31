@@ -1,12 +1,11 @@
-use std::fs::File;
-use std::io::Write;
 use crate::error::Error;
 use crate::pigean::factors::{Factor, FileInfo};
-use std::path::Path;
-use serde::Serialize;
 use crate::s3;
 use crate::s3::FilePath;
 use crate::tsv::{TsvConsumer, TsvEater, TsvEaterMaker};
+use serde::Serialize;
+use std::io::Write;
+use std::path::Path;
 
 #[derive(Serialize)]
 struct GeneSetFactor {
@@ -111,8 +110,7 @@ fn add_file<W: Write>(
     Ok(())
 }
 pub(crate) fn add_files(files: &[FileInfo], out_file: &Path) -> Result<(), Error> {
-    let mut writer =
-        csv::WriterBuilder::new().delimiter(b',').from_writer(File::create(out_file)?);
+    let mut writer = csv::Writer::from_path(out_file)?;
     for file in files {
         add_file(file, &mut writer)?;
     }
