@@ -1,0 +1,1 @@
+cypher-shell -u neo4j -p <password> -a neo4j://98.81.195.125:7687 --format plain "MATCH (t:Trait)-[e:TRAIT_GENE_SET]->(tgs:TraitGeneSet) RETURN replace(tgs.label, \" for \", \" associated with \") AS term, t.id AS phenotype, tgs.id AS gene_set, tgs.source AS source, e.beta_uncorrected AS beta_uncorrected;" > terms
